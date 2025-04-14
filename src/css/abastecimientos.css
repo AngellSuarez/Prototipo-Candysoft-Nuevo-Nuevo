@@ -1,0 +1,29 @@
+.input-fecha-placeholder-abastecimiento,
+.input-fecha-activo-abastecimiento {
+    width: 100%; 
+    max-width: 550px; 
+    height: 53px;
+    border: 2px solid #f8c1d9 !important;
+    border-radius: 13px;
+    padding-left: 10px;
+    color: black;
+    outline: none;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    background-color: white;
+    justify-content: flex-start;
+}
+
+.sidebar.closed ~ .main-container .input-fecha-placeholder-abastecimiento,
+.sidebar.closed ~ .main-container .input-fecha-activo-abastecimiento {
+    width: 480px; 
+}
+
+
+.input-fecha-activo::-webkit-calendar-picker-indicator {
+    opacity: 1;
+    cursor: pointer;
+    filter: invert(60%) sepia(100%) saturate(400%) hue-rotate(290deg);
+
+}
