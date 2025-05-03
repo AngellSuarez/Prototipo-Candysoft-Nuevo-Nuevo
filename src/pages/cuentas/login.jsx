@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import "../../css/formCuentas.css";
 import Swal from 'sweetalert2';
 import { Eye, EyeOff } from 'lucide-react';
+import { login } from "../../services/auth_service"; // Importa la función de login
 
 const Login = () => {
     const navigate = useNavigate();
@@ -11,14 +12,7 @@ const Login = () => {
     const [password, setPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
     const [errors, setErrors] = useState({});
-    const [loadingMessage, setLoadingMessage] = useState("");
-
-    const usuariosFake = [
-        { email: "leylygallego@gmail.com", password: "admin123", rol: "admin" },
-        { email: "miguel.suarez@gmail.com", password: "cliente123", rol: "cliente" },
-        { email: "paula@candy.com", password: "mani123", rol: "manicurista" },
-        { email: "elizabeth23@gmail.com", password: "recep123", rol: "recepcionista" }
-    ];
+    const [loadingMessage, setLoadingMessage] = useState(""); //no tengo idea de pq esa mierda tira error
 
     const validateEmail = (email) => {
         const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -38,32 +32,39 @@ const Login = () => {
         return Object.keys(newErrors).length === 0;
     };
 
-    const handleLogin = (e) => {
+    const handleLogin = async (e) => {
         e.preventDefault();
+        setErrors({}); // Limpiar errores previos
 
         if (!validateFields()) return;
 
-        const userFound = usuariosFake.find(
-            (user) => user.email === email && user.password === password
-        );
-
-        if (!userFound) {
-            setErrors({ general: "Correo o contraseña incorrectos" });
-            return;
-        }
-
+        setLoadingMessage("Iniciando sesión...");
         Swal.fire({
             title: 'Iniciando sesión...',
             text: 'Espera un momento por favor',
-            timer: 2000,
-            timerProgressBar: true,
             allowOutsideClick: false,
             didOpen: () => {
                 Swal.showLoading();
             }
-        }).then(() => {
-            switch (userFound.rol) {
-                case "admin":
+        });
+
+        try {
+            const responseData = await login(email, password);
+            Swal.close();
+            console.log('Login exitoso:', responseData);
+
+            // Guardar el token de acceso (y posiblemente el refresh token)
+            localStorage.setItem('access_token', responseData.access);
+            localStorage.setItem('refresh_token', responseData.refresh);
+            localStorage.setItem('user_id', responseData.user_id);
+            localStorage.setItem('username', responseData.username);
+            localStorage.setItem('nombre', responseData.nombre);
+            localStorage.setItem('apellido', responseData.apellido);
+            localStorage.setItem('rol', responseData.rol);
+
+            // Redireccionar según el rol
+            switch (responseData.rol) {
+                case "administrador":
                     navigate("/administrador/dashboard");
                     break;
                 case "cliente":
@@ -72,13 +73,17 @@ const Login = () => {
                 case "manicurista":
                     navigate("/manicurista/dashboard");
                     break;
-                case "recepcionista":
-                    navigate("/recepcionista/dashboard");
-                    break;
                 default:
                     navigate("/");
             }
-        });
+
+        } catch (error) {
+            Swal.close();
+            console.error('Error al iniciar sesión:', error);
+            setErrors({ general: error.message });
+        } finally {
+            setLoadingMessage("");
+        }
     };
 
     return (

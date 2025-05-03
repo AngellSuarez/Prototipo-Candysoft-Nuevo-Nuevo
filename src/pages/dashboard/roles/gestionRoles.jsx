@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { FiEdit, FiTrash2 } from 'react-icons/fi';
 import { AiOutlineEye } from "react-icons/ai";
 import "../../../css/gestionar.css";
-import "../../../css/rolesForm.css";
+import "../../../css/rolesform.css";
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
 import { useTheme } from "../../tema/ThemeContext";

@@ -18,19 +18,13 @@ body {
 }
 
 .left {
-    overflow: hidden;
+    overflow-y: auto;
     display: flex;
-    flex-wrap: wrap;
     flex-direction: column;
-    justify-content: center;
-    animation-name: left;
-    animation-duration: 1s;
-    animation-fill-mode: both;
-    animation-delay: 1s;
     padding: 20px 40px;
     width: 440px;
     background-color: white;
-    z-index: 1;
+    height: 100vh;
 }
 
 .right {
@@ -58,10 +52,12 @@ body {
 }
 
 .form {
-    max-width: 80%;
+    width: 100%;
     display: flex;
     flex-direction: column;
+    padding-bottom: 30px; /* para que no se corte el botón de abajo */
 }
+
 
 .form>p {
     text-align: right;
