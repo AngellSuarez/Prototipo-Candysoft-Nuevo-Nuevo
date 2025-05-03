@@ -215,3 +215,25 @@ body {
         font-size: 13px;
     }
 }
+
+.password-field-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.password-field-container input {
+    width: 100%;
+    padding-right: 40px; 
+}
+
+.toggle-password {
+    position: absolute;
+    right: 10px;
+    cursor: pointer;
+    margin-top: 25px;
+    color: #888;
+}
+.toggle-password:hover {
+    color: #555;
+}

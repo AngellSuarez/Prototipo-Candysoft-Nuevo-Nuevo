@@ -6,6 +6,7 @@ import Recuperar2 from "../cuentas/recuperar2";
 import Recuperar3 from "../cuentas/recuperar3";
 import DashboardRoutes from "./dashboard";
 import ManicuristaRoutes from "./manicurista";
+import RecepcionistaRoutes from "./recepcionista";
 import ClienteRoutes from "./cliente";
 import Inicio from "../cliente/inicio/inicio";
 import NosotrosInicio from "../cliente/inicio/nosotrosinicio"; 
@@ -31,6 +32,8 @@ const AppRouter = () => {
       <Route path="/cliente/*" element={<ClienteRoutes />} />
 
       <Route path="/manicurista/dashboard/*" element={<ManicuristaRoutes /> } />
+
+      <Route path="/recepcionista/dashboard/*" element={<RecepcionistaRoutes />} />
 
       <Route path="*" element={<h2>Página no encontrada</h2>} />
     </Routes>

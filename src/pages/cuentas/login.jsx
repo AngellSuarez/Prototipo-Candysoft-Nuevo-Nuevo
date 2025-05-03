@@ -2,20 +2,22 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../../css/formCuentas.css";
 import Swal from 'sweetalert2';
-
+import { Eye, EyeOff } from 'lucide-react';
 
 const Login = () => {
     const navigate = useNavigate();
 
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [showPassword, setShowPassword] = useState(false);
     const [errors, setErrors] = useState({});
     const [loadingMessage, setLoadingMessage] = useState("");
 
     const usuariosFake = [
-        { email: "leyly@candy.com", password: "admin123", rol: "admin" },
-        { email: "miguel@candy.com", password: "cliente123", rol: "cliente" },
-        { email: "paula@candy.com", password: "mani123", rol: "manicurista" }
+        { email: "leylygallego@gmail.com", password: "admin123", rol: "admin" },
+        { email: "miguel.suarez@gmail.com", password: "cliente123", rol: "cliente" },
+        { email: "paula@candy.com", password: "mani123", rol: "manicurista" },
+        { email: "elizabeth23@gmail.com", password: "recep123", rol: "recepcionista" }
     ];
 
     const validateEmail = (email) => {
@@ -70,6 +72,9 @@ const Login = () => {
                 case "manicurista":
                     navigate("/manicurista/dashboard");
                     break;
+                case "recepcionista":
+                    navigate("/recepcionista/dashboard");
+                    break;
                 default:
                     navigate("/");
             }
@@ -95,14 +100,24 @@ const Login = () => {
                     />
                     {errors.email && <span className="error">{errors.email}</span>}
 
-                    <input
-                        type="password"
-                        placeholder="Contraseña *"
-                        className="form-field animation a4"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        onBlur={validateFields}
-                    />
+                    <div className="password-field-container animation a4">
+                        <input
+                            type={showPassword ? "text" : "password"}
+                            placeholder="Contraseña *"
+                            className="form-field"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            onBlur={validateFields}
+                        />
+                        {password && (
+                            <span
+                                className="toggle-password"
+                                onClick={() => setShowPassword(!showPassword)}
+                            >
+                                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                            </span>
+                        )}
+                    </div>
                     {errors.password && <span className="error">{errors.password}</span>}
 
                     {errors.general && <span className="error">{errors.general}</span>}
@@ -115,7 +130,7 @@ const Login = () => {
                     </p>
 
                     <p className="animation a6">
-                        ¿Olvidate tu contraseña?{" "}
+                        ¿Olvidaste tu contraseña?{" "}
                         <span onClick={() => navigate("/recuperacion-contraseña")} className="link">
                             Recuperala
                         </span>

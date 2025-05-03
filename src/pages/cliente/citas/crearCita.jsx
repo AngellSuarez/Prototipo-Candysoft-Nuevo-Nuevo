@@ -148,7 +148,7 @@ const CrearCita = () => {
                             marginTop: '10px'
                         }}
                     >
-                        <span role="img" aria-label="user">👤</span> {manicuristaSeleccionada}
+                        <span role="img" aria-label="user">👩‍🎨</span> {manicuristaSeleccionada}
                     </div>
                 ) : (
                     <p

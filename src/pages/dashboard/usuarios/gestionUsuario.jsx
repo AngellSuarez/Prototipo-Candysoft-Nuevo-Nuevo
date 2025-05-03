@@ -5,6 +5,8 @@ import { AiOutlineEye } from "react-icons/ai";
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content'
 import { useTheme } from "../../tema/ThemeContext";
+import { Link } from "react-router-dom";
+import { Bell, User } from 'lucide-react';
 
 const GestionUsuarios = () => {
 
@@ -106,8 +108,8 @@ const GestionUsuarios = () => {
             showCancelButton: true,
             confirmButtonText: 'Sí, eliminar',
             cancelButtonText: 'Cancelar',
-            confirmButtonColor: '#7e2952',  
-            cancelButtonColor: '#d8d6d7',  
+            confirmButtonColor: '#7e2952',
+            cancelButtonColor: '#d8d6d7',
             reverseButtons: true,
             customClass: {
                 popup: 'swal-rosado'
@@ -223,13 +225,42 @@ const GestionUsuarios = () => {
     const indexPrimerUsuario = indexUltimoUsuario - usuarioPorPagina;
     const usuariosActuales = usuariosFiltrados.slice(indexPrimerUsuario, indexUltimoUsuario);
     const totalPaginas = Math.ceil(usuariosFiltrados.length / usuarioPorPagina);
-  
+
     const { darkMode } = useTheme();
+
+    const [isNotificacionesModalOpen, setIsNotificacionesModalOpen] = useState(false);
+    const [notificaciones, setNotificaciones] = useState([
+        { id: 1, mensaje: "Nueva novedad creada por Paula. Cambio en el horario de ingreso" },
+        { id: 2, mensaje: "Se ha agendado una cita para el 03/05/2025." }
+    ]);
+
+    const openNotificacionesModal = () => setIsNotificacionesModalOpen(true);
+    const closeNotificacionesModal = () => setIsNotificacionesModalOpen(false);
 
     return (
         <div className={`roles-container ${darkMode ? "dark" : ""}`}>
-            <div className="flex justify-between items-center mb-6">
-                <h1 className="text-2xl font-bold">Gestión de usuarios</h1>
+            <div className="fila-formulario">
+                <h1 className="titulo">Gestión de usuarios</h1>
+
+                <div className="iconos-perfil">
+                    <div className="bell-container" onClick={openNotificacionesModal}>
+                        <span title="Ver tus notificaciones">
+                            <Bell className="icon" />
+                        </span>
+                        {notificaciones.length > 0 && (
+                            <span className="notification-badge" title="Ver tus notificaciones">
+                                {notificaciones.length > 99 ? "99+" : notificaciones.length}
+                            </span>
+                        )}
+                    </div>
+
+                    <Link to="/administrador/dashboard/perfil">
+                        <span title="Tú perfil">
+                            <User className="icon" />
+                        </span>
+                    </Link>
+
+                </div>
             </div>
             <button onClick={openCrearModal} className="crear-btn mt-4">
                 Crear usuario
@@ -794,6 +825,32 @@ const GestionUsuarios = () => {
                             <div >
                                 <button className="btn-volver" onClick={closeVerModal}>
                                     Volver
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {isNotificacionesModalOpen && (
+                <div className="overlay-popup" onClick={closeNotificacionesModal}>
+                    <div className="ventana-popup max-h-[300vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+                        <div className="contenido-popup2">
+                            <h2 className="text-xl font-semibold mb-4">Notificaciones</h2>
+                            {notificaciones.length === 0 ? (
+                                <div className="p-3 bg-gray-100 rounded-lg shadow">No tienes notificaciones nuevas.</div>
+                            ) : (
+                                <ul className="space-y-2">
+                                    {notificaciones.map((n) => (
+                                        <li key={n.id} className="p-3 bg-white border rounded-lg shadow noti">
+                                            {n.mensaje}
+                                        </li>
+                                    ))}
+                                </ul>
+                            )}
+                            <div className="button-container">
+                                <button className="btn-cancelar" onClick={closeNotificacionesModal}>
+                                    Cerrar
                                 </button>
                             </div>
                         </div>

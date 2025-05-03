@@ -244,7 +244,7 @@ const VerCita = () => {
 
                         <div className="responsable-cita">
                             <span className="responsable-label-cita">Reserva a cargo de:</span>
-                            <p>💅 {citaSeleccionada.manicurista}</p>
+                            <p>👩‍🎨 {citaSeleccionada.manicurista}</p>
                         </div>
 
                         <div className="total-cita">

@@ -2,13 +2,15 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../../css/formCuentas.css";
 import Swal from "sweetalert2";
-
+import { Eye, EyeOff } from "lucide-react";
 
 const Recuperar3 = () => {
     const navigate = useNavigate();
 
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [errors, setErrors] = useState({});
 
     const validar = () => {
@@ -36,12 +38,11 @@ const Recuperar3 = () => {
                 showConfirmButton: false,
                 timer: 2500,
             });
-        
+
             setTimeout(() => {
                 navigate("/login");
             }, 2000);
         }
-        
     };
 
     return (
@@ -53,24 +54,44 @@ const Recuperar3 = () => {
                 </div>
 
                 <form className="form" onSubmit={handleSubmit}>
-                    <input
-                        type="password"
-                        placeholder="Nueva contraseña *"
-                        className="form-field animation a3"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        onBlur={validar}
-                    />
+                    <div className="password-field-container animation a3">
+                        <input
+                            type={showPassword ? "text" : "password"}
+                            placeholder="Nueva contraseña *"
+                            className="form-field"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            onBlur={validar}
+                        />
+                        {password && (
+                            <span
+                                className="toggle-password"
+                                onClick={() => setShowPassword(!showPassword)}
+                            >
+                                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                            </span>
+                        )}
+                    </div>
                     {errors.password && <span className="error">{errors.password}</span>}
 
-                    <input
-                        type="password"
-                        placeholder="Confirmar contraseña *"
-                        className="form-field animation a4"
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                        onBlur={validar}
-                    />
+                    <div className="password-field-container animation a4">
+                        <input
+                            type={showConfirmPassword ? "text" : "password"}
+                            placeholder="Confirmar contraseña *"
+                            className="form-field"
+                            value={confirmPassword}
+                            onChange={(e) => setConfirmPassword(e.target.value)}
+                            onBlur={validar}
+                        />
+                        {confirmPassword && (
+                            <span
+                                className="toggle-password"
+                                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                            >
+                                {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                            </span>
+                        )}
+                    </div>
                     {errors.confirmPassword && <span className="error">{errors.confirmPassword}</span>}
 
                     <button className="animation a6" type="submit">

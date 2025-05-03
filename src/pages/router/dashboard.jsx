@@ -54,7 +54,7 @@ const DashboardRoutes = () => {
                 <Route path="/perfil" element={<Perfil />} />
                 <Route path="/perfil/editarPerfil" element={<EditarPerfil />} />
                 {/*Ruta de reportes*/}
-                <Route path="/reportes" element={<GestionReporte />}/>
+                <Route path="/consumos" element={<GestionReporte />}/>
             </Routes>
         </BaseCrud>
     );

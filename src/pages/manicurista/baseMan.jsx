@@ -103,13 +103,6 @@ const BaseCrudMan = ({ children }) => {
                         </li>
 
                         <hr  />
-
-                        <li className="nav-item">
-                            <Link to="/manicurista/dashboard/perfil">
-                                <MdAccountCircle className="icon" /> {menuOpen && "Perfil"}
-                                {!menuOpen && <span className="tooltip" style={{ top: "63%", left: "80px" }}>Perfil</span>}
-                            </Link>
-                        </li>
                         <li className="nav-item">
                             <Link
                                 to="#"

@@ -67,6 +67,7 @@ const BaseCrud = ({ children }) => {
                         className="profile-pic"
                     />
                     <h3>Leyly Gallego</h3>
+                    <p>Administrador</p>
                 </div>
                 <hr className={`linea-das ${menuOpen ? "visible" : "hidden"}`} />
                 <nav>
@@ -151,7 +152,7 @@ const BaseCrud = ({ children }) => {
                                     </Link>
                                 </li>
                                 <li className="nav-item">
-                                    <Link to="/administrador/dashboard/reportes">
+                                    <Link to="/administrador/dashboard/consumos">
                                         <FaChartBar className="icon" /> Consumos
                                         {!menuOpen && <span className="tooltip" style={{ top: "50%", left: "80px" }}>Abastecimientos</span>}
                                     </Link>
@@ -202,13 +203,6 @@ const BaseCrud = ({ children }) => {
                         </li>
 
                         <hr className="linea-dashboard" />
-
-                        <li className="nav-item">
-                            <Link to="/administrador/dashboard/perfil">
-                                <MdAccountCircle className="icon" /> {menuOpen && "Perfil"}
-                                {!menuOpen && <span className="tooltip" style={{ top: "66.5%", left: "80px" }}>Perfil</span>}
-                            </Link>
-                        </li>
                         <li className="nav-item">
                             <Link
                                 to="#"

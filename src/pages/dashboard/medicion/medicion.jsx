@@ -1,8 +1,10 @@
-import React from "react";
-import { FaHandsHelping, FaStar, FaChartLine, FaRegCalendarCheck, FaUsers, FaUserCog, FaBoxOpen  } from "react-icons/fa";
+import React, { useState } from "react";
+import { FaHandsHelping, FaStar, FaChartLine, FaRegCalendarCheck, FaUsers, FaUserCog, FaBoxOpen } from "react-icons/fa";
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, } from "recharts";
 import "../../../css/medicion.css";
 import { useTheme } from "../../tema/ThemeContext";
+import { Link } from "react-router-dom";
+import { Bell, User } from 'lucide-react';
 
 const serviciosDia = [
   { name: "Ana", servicios: 3 },
@@ -90,11 +92,41 @@ const topAbastecimientos = [
 
 
 const Medicion = () => {
+  const [isNotificacionesModalOpen, setIsNotificacionesModalOpen] = useState(false);
+  const [notificaciones, setNotificaciones] = useState([
+    { id: 1, mensaje: "Nueva novedad creada por Paula. Cambio en el horario de ingreso" },
+    { id: 2, mensaje: "Se ha agendado una cita para el 03/05/2025." }
+  ]);
+
+  const openNotificacionesModal = () => setIsNotificacionesModalOpen(true);
+  const closeNotificacionesModal = () => setIsNotificacionesModalOpen(false);
   const { darkMode } = useTheme();
   return (
     <div className={`dashboard-container ${darkMode ? "dark" : ""}`}>
-      <div className="dashboard-grid">
+      <div className="fila-formulario">
+        <h1 className="titulo">Gestión dashboard</h1>
 
+        <div className="iconos-perfil">
+          <div className="bell-container" onClick={openNotificacionesModal}>
+            <span title="Ver tus notificaciones">
+              <Bell className="icon" />
+            </span>
+            {notificaciones.length > 0 && (
+              <span className="notification-badge" title="Ver tus notificaciones">
+                {notificaciones.length > 99 ? "99+" : notificaciones.length}
+              </span>
+            )}
+          </div>
+
+          <Link to="/administrador/dashboard/perfil">
+            <span title="Tú perfil">
+              <User className="icon" />
+            </span>
+          </Link>
+
+        </div>
+      </div>
+      <div className="dashboard-grid">
         <div className="card combined-card">
           <div className="combined-content ">
             <div className="left-section highlight-card">
@@ -222,7 +254,7 @@ const Medicion = () => {
         <div className="card detail-card">
           <div className="card-title">
             <h3>Últimos Abastecimientos</h3>
-            <FaBoxOpen  className="icon" />
+            <FaBoxOpen className="icon" />
           </div>
           <ul className="detail-list">
             {abastecimientosRecientes.map((item, idx) => (
@@ -237,7 +269,7 @@ const Medicion = () => {
         <div className="card detail-card">
           <div className="card-title">
             <h3>Top Manicuristas por Abastecimientos</h3>
-            <FaUserCog  className="icon" />
+            <FaUserCog className="icon" />
           </div>
 
           <table className="detail-table">
@@ -257,6 +289,32 @@ const Medicion = () => {
             </tbody>
           </table>
         </div>
+
+        {isNotificacionesModalOpen && (
+          <div className="overlay-popup" onClick={closeNotificacionesModal}>
+            <div className="ventana-popup max-h-[300vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+              <div className="contenido-popup2">
+                <h2 className="text-xl font-semibold mb-4">Notificaciones</h2>
+                {notificaciones.length === 0 ? (
+                  <div className="p-3 bg-gray-100 rounded-lg shadow">No tienes notificaciones nuevas.</div>
+                ) : (
+                  <ul className="space-y-2">
+                    {notificaciones.map((n) => (
+                      <li key={n.id} className="p-3 bg-white border rounded-lg shadow noti">
+                        {n.mensaje}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                <div className="button-container">
+                  <button className="btn-cancelar" onClick={closeNotificacionesModal}>
+                    Cerrar
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

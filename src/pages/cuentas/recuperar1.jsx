@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import Swal from "sweetalert2";
 import "../../css/formCuentas.css";
 
 const Recuperar1 = () => {
@@ -24,7 +25,8 @@ const Recuperar1 = () => {
     else if (!validateEmail(formData.email)) newErrors.email = "Correo no válido";
 
     if (!formData.confirmEmail) newErrors.confirmEmail = "Confirma tu correo";
-    else if (formData.email !== formData.confirmEmail) newErrors.confirmEmail = "Los correos no coinciden";
+    else if (formData.email !== formData.confirmEmail)
+      newErrors.confirmEmail = "Los correos no coinciden";
 
     setErrors(newErrors);
 
@@ -38,13 +40,29 @@ const Recuperar1 = () => {
     });
   };
 
-  const irRestaurar = (event) => {
+  const irRestaurar = async (event) => {
     event.preventDefault();
 
     if (!validateFields()) return;
 
-    alert("Correo validado correctamente");
-    navigate("/code");
+    const correosRegistrados = ["leyly@candy.com", "miguel@candy.com"];
+
+    if (!correosRegistrados.includes(formData.email)) {
+      Swal.fire({
+        icon: "error",
+        title: "Correo no encontrado",
+        text: "El correo ingresado no está registrado. Por favor, crea una cuenta.",
+      });
+      return;
+    }
+
+    Swal.fire({
+      icon: "success",
+      title: "Correo validado",
+      text: "Se ha enviado un código de verificación a tu correo.",
+    }).then(() => {
+      navigate("/code");
+    });
   };
 
   return (

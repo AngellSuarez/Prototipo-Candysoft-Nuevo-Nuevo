@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../../css/formCuentas.css";
 import Swal from "sweetalert2";
+import { Eye, EyeOff } from "lucide-react";
 
 const Registro = () => {
   const navigate = useNavigate();
@@ -15,6 +16,8 @@ const Registro = () => {
   });
 
   const [errors, setErrors] = useState({});
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const validateEmail = (email) => {
     const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -31,7 +34,6 @@ const Registro = () => {
     else if (!validateEmail(formData.email)) newErrors.email = "Correo no válido";
 
     if (!formData.password) newErrors.password = "La contraseña es obligatoria";
-    else if (formData.password.length < 8) newErrors.password = "La contraseña debe tener al menos 8 caracteres";
 
     if (!formData.confirmPassword) newErrors.confirmPassword = "Debes confirmar la contraseña";
     else if (formData.password !== formData.confirmPassword) newErrors.confirmPassword = "Las contraseñas no coinciden";
@@ -65,7 +67,6 @@ const Registro = () => {
       navigate("/login");
     }, 2000);
   };
-
 
   return (
     <div className="container">
@@ -109,26 +110,46 @@ const Registro = () => {
           />
           {errors.email && <span className="error">{errors.email}</span>}
 
-          <input
-            type="password"
-            placeholder="Contraseña *"
-            className="form-field animation a6"
-            name="password"
-            value={formData.password}
-            onChange={handleChange}
-            onBlur={validateFields}
-          />
+          <div className="password-field-container animation a6">
+            <input
+              type={showPassword ? "text" : "password"}
+              placeholder="Contraseña *"
+              className="form-field"
+              name="password"
+              value={formData.password}
+              onChange={handleChange}
+              onBlur={validateFields}
+            />
+            {formData.password && (
+              <span
+                className="toggle-password"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </span>
+            )}
+          </div>
           {errors.password && <span className="error">{errors.password}</span>}
 
-          <input
-            type="password"
-            placeholder="Confirmar contraseña *"
-            className="form-field animation a6"
-            name="confirmPassword"
-            value={formData.confirmPassword}
-            onChange={handleChange}
-            onBlur={validateFields}
-          />
+          <div className="password-field-container animation a6">
+            <input
+              type={showConfirmPassword ? "text" : "password"}
+              placeholder="Confirmar contraseña *"
+              className="form-field"
+              name="confirmPassword"
+              value={formData.confirmPassword}
+              onChange={handleChange}
+              onBlur={validateFields}
+            />
+            {formData.confirmPassword && (
+              <span
+                className="toggle-password"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              >
+                {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </span>
+            )}
+          </div>
           {errors.confirmPassword && <span className="error">{errors.confirmPassword}</span>}
 
           <p className="animation a6">

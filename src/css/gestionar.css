@@ -613,6 +613,46 @@ label {
 }
 
 
+.titulo {
+    white-space: nowrap;
+}
+
+.iconos-perfil {
+    margin-left: 55%;
+    margin-top: 10px;
+    display: flex;
+    gap: 2rem;
+}
+
+.bell-container {
+    position: relative;
+    display: inline-block;
+    cursor: pointer;
+}
+
+.noti {
+    margin-top: 10px;
+}
+
+.notification-badge {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    background-color: rgb(185, 25, 25);
+    color: white;
+    font-size: 10px;
+    font-weight: bold;
+    padding: 2px 5px;
+    border-radius: 50%;
+    min-width: 16px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    border: 2px solid white;
+    box-sizing: border-box;
+}
 
 .fila-imagen {
     display: flex;
@@ -813,7 +853,7 @@ label {
     background-color: #3a393a;
 }
 
-.dark-mode .servicio-item-modal{
+.dark-mode .servicio-item-modal {
     background-color: white;
     color: black;
 }
@@ -851,7 +891,7 @@ label {
 }
 
 .dark-mode .input-nombre,
-.dark-mode .insumo-card{
+.dark-mode .insumo-card {
     background-color: #f0e8e8;
 }
 
@@ -870,7 +910,8 @@ label {
 .dark-mode .solo-oscuro,
 .dark-mode .titulo-usuario,
 .dark-mode .facturados,
-.dark-mode .valores-totales span {
+.dark-mode .valores-totales span,
+.dark-mode .icon {
     color: #ffc0cb;
 }
 
@@ -889,23 +930,23 @@ label {
 .dark-mode .input-fecha-placeholder-horario,
 .dark-mode .input-fecha-activo-horario,
 .dark-mode .input-fecha-placeholder-cita,
-.dark-mode .input-fecha-activo-cita, 
+.dark-mode .input-fecha-activo-cita,
 .dark-mode .input-fecha-placeholder-fecha-cita,
 .dark-mode .input-fecha-activo-fecha-cita,
 .dark-mode .input-fecha-placeholder-venta,
 .dark-mode .input-fecha-activo-venta,
-.dark-mode .input-fecha-activo-liq  {
+.dark-mode .input-fecha-activo-liq {
     border: 2px solid #f8c1d9 !important;
     background-color: #f0e8e8;
 }
 
 .dark-mode .insumos-agregados-modal,
-.dark-mode .servicios-agregados-modal{
+.dark-mode .servicios-agregados-modal {
     background-color: #3a393a;
     color: white;
 }
 
-.dark-mode .insumo-item-modal{
+.dark-mode .insumo-item-modal {
     color: black;
 }
 

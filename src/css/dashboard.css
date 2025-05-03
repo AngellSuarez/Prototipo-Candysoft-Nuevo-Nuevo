@@ -29,7 +29,7 @@
 .sidebar {
     width: 265px;
     background-color: #fff0f5;
-    color: #7e2952;
+    color: #7c254f;
     height: 100vh;
     padding: 20px;
     position: fixed;
@@ -78,7 +78,6 @@
 
 .sidebar h3 {
     font-size: 18px;
-    font-weight: bold;
 }
 
 nav ul {
