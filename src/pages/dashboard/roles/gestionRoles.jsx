@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { FiEdit, FiTrash2 } from 'react-icons/fi';
 import { AiOutlineEye } from "react-icons/ai";
 import "../../../css/gestionar.css";
@@ -8,17 +8,10 @@ import withReactContent from 'sweetalert2-react-content';
 import { useTheme } from "../../tema/ThemeContext";
 import { Link } from "react-router-dom";
 import { Bell, User } from 'lucide-react';
+import {listar_roles} from '../../../services/roles_service'
 const GestionRoles = () => {
 
-    const [roles, setRoles] = useState([
-        { id: 1, nombre: 'Administrador', descripcion: 'Acceso total al sistema', modulos: ["Cliente", "Compra", "Proveedor"], estado: true },
-        { id: 2, nombre: 'Editor', descripcion: 'Puede editar contenido pero no administrar usuarios', modulos: ["Cliente", "Compra", "Proveedor"], estado: false },
-        { id: 3, nombre: 'Visualizador', descripcion: 'Solo puede ver información, sin permisos de edición', modulos: ["Cliente", "Compra", "Proveedor"], estado: true },
-        { id: 4, nombre: 'Supervisor', descripcion: 'Controla los procesos internos', estado: true },
-        { id: 5, nombre: 'Recepcionista', descripcion: 'Atiende a los clientes', estado: true },
-        { id: 6, nombre: 'Contador', descripcion: 'Gestiona la parte financiera', estado: false },
-    ]);
-
+    const [roles,setRoles] = useState([])
     const [rolSeleccionado, setRolSeleccionado] = useState(null);
     const [busqueda, setBusqueda] = useState("");
     const [paginaActual, setPaginaActual] = useState(1);
@@ -42,6 +35,20 @@ const GestionRoles = () => {
         "Novedades",
         "Usuario",
     ];
+
+    useEffect(() => {
+        const obtener_roles = async () =>{
+            try{
+                const data = await listar_roles();
+                setRoles(data)
+                console.log(data)
+            }catch(error){
+                console.error("Error llamando los roles: ",error)
+            }
+        };
+
+        obtener_roles();
+    }, []);
 
     const validarCampo = (name, value) => {
         let error = "";

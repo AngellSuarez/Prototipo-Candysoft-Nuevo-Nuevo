@@ -1,8 +1,9 @@
-import { Routes, Route } from "react-router-dom";
-import BaseCrudRec from "../recepcionista/baseRec"
+import { useEffect } from 'react';
+import { useNavigate, Outlet, Routes, Route } from 'react-router-dom';
+import BaseCrudRec from "../recepcionista/baseRec";
 import GestionInsumosRec from "../recepcionista/insumosRec/gestionInsumosRec";
 import GestionProveedoresRec from "../recepcionista/proveedoresRec/gestionProveedorRec";
-import GestionComprasRec from "../recepcionista/comprasRec/gestionCompraRec"
+import GestionComprasRec from "../recepcionista/comprasRec/gestionCompraRec";
 import GestionServiciosRec from "../recepcionista/serviciosRec/gestionServicioRec";
 import GestionManicuristaRec from "../recepcionista/manicuristasRec/gestionManicuristaRec";
 import GestionAbastecimientosRec from "../recepcionista/abastecimientosRec/gestionAbastecimientoRec";
@@ -17,41 +18,51 @@ import PerfilRec from "../recepcionista/perfilRec/gestionPerfilRec";
 import EditarPerfilRec from "../recepcionista/perfilRec/editarPerfilRec";
 
 const RecepcionistaRoutes = () => {
-    return (
-        <BaseCrudRec>  {/* BaseCrud envuelve todas las rutas */}
+    const navigate = useNavigate();
+    const isAuthenticated = localStorage.getItem('access_token');
+    console.log('DashboardRoutes renderizado. Token:', isAuthenticated);
+
+    useEffect(() => {
+        if (!isAuthenticated) {
+            navigate('/login');
+        }
+    }, [isAuthenticated, navigate]);
+
+    return isAuthenticated ? (
+        <BaseCrudRec>
             <Routes>
                 {/* medicion o default */}
-                <Route  path="/" element={<MedicionRec />} />
+                <Route path="/" element={<MedicionRec />} />
                 {/*Ruta de insumos*/}
-                <Route path="/insumos" element={<GestionInsumosRec />}/>
+                <Route path="/insumos" element={<GestionInsumosRec />} />
                 {/*Ruta de proveedores*/}
-                <Route path="/proveedores" element={<GestionProveedoresRec />}/>
+                <Route path="/proveedores" element={<GestionProveedoresRec />} />
                 {/*Ruta de compras*/}
-                <Route path="/compras" element={<GestionComprasRec />}/>
+                <Route path="/compras" element={<GestionComprasRec />} />
                 {/*Ruta de servicios*/}
-                <Route path="/servicios" element={<GestionServiciosRec />}/>
+                <Route path="/servicios" element={<GestionServiciosRec />} />
                 {/*Ruta de manicuristas*/}
-                <Route path="/manicuristas" element={<GestionManicuristaRec />}/>
+                <Route path="/manicuristas" element={<GestionManicuristaRec />} />
                 {/*Ruta de abastecimientos*/}
-                <Route path="/abastecimientos" element={<GestionAbastecimientosRec />}/>
+                <Route path="/abastecimientos" element={<GestionAbastecimientosRec />} />
                 {/*Ruta de novedades*/}
-                <Route path="/novedades" element={<GestionNovedadesRec />}/>
+                <Route path="/novedades" element={<GestionNovedadesRec />} />
                 {/*Ruta de clientes*/}
-                <Route path="/clientes" element={<GestionClientesRec />}/>
+                <Route path="/clientes" element={<GestionClientesRec />} />
                 {/*Ruta de citas*/}
-                <Route path="/citas" element={<GestionCitasRec />}/>
+                <Route path="/citas" element={<GestionCitasRec />} />
                 {/*Ruta de ventas*/}
-                <Route path="/ventas" element={<GestionVentasRec />}/>
+                <Route path="/ventas" element={<GestionVentasRec />} />
                 {/*Ruta de liquidaciones*/}
-                <Route path="/liquidaciones" element={<GestionLiquidacionesRec />}/>
+                <Route path="/liquidaciones" element={<GestionLiquidacionesRec />} />
                 {/*Ruta del perfil*/}
                 <Route path="/perfil" element={<PerfilRec />} />
                 <Route path="/perfil/editarPerfil" element={<EditarPerfilRec />} />
                 {/*Ruta de reportes*/}
-                <Route path="/consumos" element={<GestionConsumoRec />}/>
+                <Route path="/consumos" element={<GestionConsumoRec />} />
             </Routes>
         </BaseCrudRec>
-    );
+    ) : null;
 };
 
 export default RecepcionistaRoutes;

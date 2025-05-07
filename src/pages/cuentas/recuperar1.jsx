@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import "../../css/formCuentas.css";
+import {solicitar_codigo_recuperacion} from '../../services/auth_service'
 
 const Recuperar1 = () => {
   const navigate = useNavigate();
@@ -45,24 +46,23 @@ const Recuperar1 = () => {
 
     if (!validateFields()) return;
 
-    const correosRegistrados = ["leyly@candy.com", "miguel@candy.com"];
+    try{
+      await solicitar_codigo_recuperacion(formData.email);
 
-    if (!correosRegistrados.includes(formData.email)) {
       Swal.fire({
-        icon: "error",
-        title: "Correo no encontrado",
-        text: "El correo ingresado no está registrado. Por favor, crea una cuenta.",
+        icon: "success",
+        title: "Correo validado",
+        text:"El codigo de recuperación se envio a su correo",
+      }).then(()=>{
+        navigate("/recuperar-password",{state: {correo: formData.email}});
       });
-      return;
+    }catch(error){
+      Swal.fire({
+        icon: 'error',
+        title: 'Error al solicitar el codigo',
+        text: error.message || 'Occurrio un error inesperado',
+      });
     }
-
-    Swal.fire({
-      icon: "success",
-      title: "Correo validado",
-      text: "Se ha enviado un código de verificación a tu correo.",
-    }).then(() => {
-      navigate("/code");
-    });
   };
 
   return (

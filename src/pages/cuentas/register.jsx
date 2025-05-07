@@ -39,7 +39,7 @@ const Registro = () => {
     if (!formData.username) newErrors.username = "El nombre de usuario es obligatorio";
     if (!formData.tipo_documento) newErrors.tipo_documento = "El tipo de documento es obligatorio";
     if (!formData.numero_documento) newErrors.numero_documento = "El número de documento es obligatorio";
-    if (!formData.celular) newErrors.celular = "El número de celular es obligatorio";
+
 
     if (!formData.email) newErrors.email = "El correo es obligatorio";
     else if (!validateEmail(formData.email)) newErrors.email = "Correo no válido";
@@ -174,7 +174,7 @@ const Registro = () => {
 
           <input
             type="text"
-            placeholder="Celular *"
+            placeholder="Celular "
             className="form-field animation a4"
             name="celular"
             value={formData.celular}

@@ -22,7 +22,7 @@ body {
     display: flex;
     flex-direction: column;
     padding: 20px 40px;
-    width: 440px;
+    width: 600px;
     background-color: white;
     height: 100vh;
 }
@@ -41,6 +41,8 @@ body {
     margin-top: -8px;
     color: #7e2952;
     font-size: 6vh;
+    margin-top: 20px;
+    margin-bottom: 20px;
     font-family: 'Pacifico';
 }
 

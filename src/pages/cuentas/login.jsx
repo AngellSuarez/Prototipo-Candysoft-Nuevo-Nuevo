@@ -73,6 +73,9 @@ const Login = () => {
                 case "manicurista":
                     navigate("/manicurista/dashboard");
                     break;
+                case "recepcionista":
+                    navigate("dashboard/recepcionista");
+                    break;
                 default:
                     navigate("/");
             }
@@ -91,13 +94,13 @@ const Login = () => {
             <div className="left">
                 <div className="header">
                     <h2 className="animation a1">Candy Nails</h2>
-                    <h4 className="animation a2">Ingresa a tu cuenta para continuar</h4>
+                    <h4 className="animation a2">Ingresa tus datos para continuar</h4>
                 </div>
 
                 <form className="form" onSubmit={handleLogin}>
                     <input
                         type="email"
-                        placeholder="Correo electrónico *"
+                        placeholder="Correo electrónico o nombre de usuario *"
                         className="form-field animation a3"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
@@ -136,7 +139,7 @@ const Login = () => {
 
                     <p className="animation a6">
                         ¿Olvidaste tu contraseña?{" "}
-                        <span onClick={() => navigate("/recuperacion-contraseña")} className="link">
+                        <span onClick={() => navigate("/requerir-codigo")} className="link">
                             Recuperala
                         </span>
                     </p>

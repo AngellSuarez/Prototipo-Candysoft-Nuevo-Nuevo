@@ -9,6 +9,7 @@ import { FaChartBar, FaMoneyBillTransfer } from "react-icons/fa6";
 import { MdAccountCircle, MdInventory, MdLogout, MdShoppingCartCheckout } from "react-icons/md";
 import "../../css/dashboard.css";
 import Swal from 'sweetalert2';
+import {logout} from "../../services/auth_service";
 
 const BaseCrud = ({ children }) => {
     const [comprasOpen, setComprasOpen] = useState(false);
@@ -28,28 +29,35 @@ const BaseCrud = ({ children }) => {
         document.body.classList.toggle("dark-mode", darkMode); 
     }, [darkMode]);
     
-    const handleLogoutConfirm = () => {
-        Swal.fire({
-            title: '¿Estás segura de cerrar sesión?',
-            text: 'Tu sesión se cerrará y deberás volver a iniciar para acceder al sistema.',
-            icon: 'warning',
-            showCancelButton: true,
-            reverseButtons: true,
-            confirmButtonColor: '#3085d6',
-            cancelButtonColor: '#d33',
-            cancelButtonText: 'Cancelar',
-            confirmButtonText: 'Sí, cerrar sesión',
-            customClass: {
-                popup: 'swal-cerrar-sesion'
-            }
-        })
-        .then((result) => {
-            if (result.isConfirmed) {
-                localStorage.clear();
-                navigate("/");
-            }
-        });
-    };
+        const handleLogoutConfirm = () => {
+            Swal.fire({
+                title: '¿Estás segura de cerrar sesión?',
+                text: 'Tu sesión se cerrará y deberás volver a iniciar para acceder al sistema.',
+                icon: 'warning',
+                showCancelButton: true,
+                reverseButtons: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                cancelButtonText: 'Cancelar',
+                confirmButtonText: 'Sí, cerrar sesión',
+                customClass: {
+                    popup: 'swal-cerrar-sesion'
+                }
+            })
+            .then(async (result)=>{
+                if(result.isConfirmed){
+                    try{
+                        await logout();
+                        console.log('Sesión cerrada correctamente en el backend');
+                    }catch(error){
+                        console.error('Error al cerrar sesión en el backend:', error);
+                    }finally{
+                        localStorage.clear();
+                        navigate('/login');
+                    }
+                }
+            });
+        };
 
     return (
         <div className={`base-container ${menuOpen ? "menu-expanded" : "menu-collapsed"} ${darkMode ? "dark-mode" : "light-mode"}`}>

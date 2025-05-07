@@ -9,6 +9,8 @@ import { useLocation } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
 
+import { logout } from '../../services/auth_service';
+
 const InicioCliente = () => {
     const navigate = useNavigate();
     const location = useLocation();
@@ -64,6 +66,36 @@ const InicioCliente = () => {
                 },
             },
         ],
+    };
+
+    const handleLogoutConfirm = () => {
+        Swal.fire({
+            title: '¿Estás segura de cerrar sesión?',
+            text: 'Tu sesión se cerrará y deberás volver a iniciar para acceder al sistema.',
+            icon: 'warning',
+            showCancelButton: true,
+            reverseButtons: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            cancelButtonText: 'Cancelar',
+            confirmButtonText: 'Sí, cerrar sesión',
+            customClass: {
+                popup: 'swal-cerrar-sesion'
+            }
+        })
+        .then(async (result)=>{
+            if(result.isConfirmed){
+                try{
+                    await logout();
+                    console.log('Sesión cerrada correctamente en el backend');
+                }catch(error){
+                    console.error('Error al cerrar sesión en el backend:', error);
+                }finally{
+                    localStorage.clear();
+                    navigate('/login');
+                }
+            }
+        });
     };
 
     const itemRefs = useRef({});
@@ -190,23 +222,7 @@ const InicioCliente = () => {
                             </div>
                             <div
                                 className="submenu-item-acceso"
-                                onClick={() => {
-                                    Swal.fire({
-                                        title: '¿Estás seguro de cerrar sesión?',
-                                        text: 'Tu sesión se cerrará y deberás volver a iniciar para acceder al sistema.',
-                                        icon: 'warning',
-                                        showCancelButton: true,
-                                        reverseButtons: true,
-                                        confirmButtonColor: '#3085d6',
-                                        cancelButtonColor: '#d33',
-                                        confirmButtonText: 'Sí, cerrar sesión',
-                                        cancelButtonText: 'Cancelar'
-                                    }).then((result) => {
-                                        if (result.isConfirmed) {
-                                            navigate('/');
-                                        }
-                                    });
-                                }}
+                                onClick={() => handleLogoutConfirm()}
                             >
                                 Cerrar sesión
                             </div>

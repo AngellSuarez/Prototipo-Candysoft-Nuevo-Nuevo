@@ -28,6 +28,45 @@ async function login(username,password){
     }
 }
 
+async function logout(){
+    try{
+        const access_token = localStorage.getItem('access_token');
+        const refresh_token = localStorage.getItem('refresh_token');
+
+        if(!refresh_token){
+            console.log('No hay token para invalidar');
+            return;
+        }
+
+        if (!access_token) {
+            console.log('No hay access token para autenticar la petición de logout.');
+            return;
+          }
+
+        const response = await fetch(`${BASE_URL}logout/`,{
+            method: 'POST',
+            headers:{
+                'Authorization': `Bearer ${access_token}`,
+                'Content-Type':'application/json',
+            },
+            body: JSON.stringify({
+                refresh_token: refresh_token,
+            }),
+        });
+
+        if(!response.ok){
+            const error = await response.json();
+            console.error('Error al cerrar sesion:', error);
+            throw new Error(error.detail || 'Error al cerrar sesión');
+        }
+
+        console.log('Sesión cerrada correctamente');
+    }catch(error){
+        console.error('Error al cerrar sesion:', error);
+        throw error;
+    }
+}
+
 async function register(username,password,nombre,apellido,tipo_documento,numero_documento,correo,celular){
     try{
         const response = await fetch(`${BASE_URL}register/`,{
@@ -59,9 +98,83 @@ async function register(username,password,nombre,apellido,tipo_documento,numero_
     }
 }
 
+async function solicitar_codigo_recuperacion(correo){
+    try{
+        const response = await fetch(`${BASE_URL}password/reset-request/`,{
+            method: 'POST',
+            headers:{
+                'Content-Type':'application/json',
+            },
+            body: JSON.stringify({
+                correo,
+            }),
+        });
+
+        if (!response.ok) {
+            const contentType = response.headers.get("content-type");
+            let errorMessage = 'Error al solicitar el código';
+      
+            if (contentType && contentType.includes("application/json")) {
+              const error = await response.json();
+              errorMessage = error.detail || errorMessage;
+            } else {
+              const text = await response.text();
+              errorMessage = text || errorMessage;
+            }
+      
+            throw new Error(errorMessage);
+          }
+      
+          // Opcional: puedes retornar algo si la API responde con éxito
+          return await response.json().catch(() => null);
+      
+    }catch(error){
+        console.error('Error al solicitar el codigo: ',error);
+        throw error;
+    }
+}
+
+async function cambiar_contrasena(codigo,correo,password){
+    try{
+        const response = await fetch(`${BASE_URL}password/reset-confirm/`,{
+            method: 'POST',
+            headers:{
+                'Content-Type':'application/json',
+            },
+            body: JSON.stringify({
+                codigo:codigo,
+                correo:correo,
+                nueva_password:password
+            }),
+        });
+
+        if(!response.ok){
+            const contentType = response.headers.get("content-type");
+            let errorMessage = 'Error al cambiar la contraseña';
+
+            if (contentType && contentType.includes("application/json")) {
+              const error = await response.json();
+              errorMessage = error.detail || errorMessage;
+            } else {
+              const text = await response.text();
+              errorMessage = text || errorMessage;
+            }
+            throw new Error(errorMessage);
+        }
+
+        return await response.json().catch(() => null);
+    }catch(error){
+        console.error('Error al cambiar la contraseña: ',error);
+        throw error;
+    }
+}
+
 
 
 export{
     login,
-    register
+    logout,
+    register,
+    solicitar_codigo_recuperacion,
+    cambiar_contrasena
 }
