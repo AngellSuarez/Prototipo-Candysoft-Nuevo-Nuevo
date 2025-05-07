@@ -8,10 +8,10 @@ import withReactContent from 'sweetalert2-react-content';
 import { useTheme } from "../../tema/ThemeContext";
 import { Link } from "react-router-dom";
 import { Bell, User } from 'lucide-react';
-import {listar_roles} from '../../../services/roles_service'
+import { listar_roles, listar_permisos, crear_rol, asignar_permisos_rol } from '../../../services/roles_service'
 const GestionRoles = () => {
 
-    const [roles,setRoles] = useState([])
+    const [roles, setRoles] = useState([])
     const [rolSeleccionado, setRolSeleccionado] = useState(null);
     const [busqueda, setBusqueda] = useState("");
     const [paginaActual, setPaginaActual] = useState(1);
@@ -20,34 +20,36 @@ const GestionRoles = () => {
     const [isCrearModalOpen, setCrearModalOpen] = useState(false);
     const [formData, setFormData] = useState({ nombre: "", descripcion: "" });
     const [errores, setErrores] = useState({});
+
     const [modulosSeleccionados, setModulosSeleccionados] = useState([]);
-    const modulosDisponibles = [
-        "Cliente",
-        "Compra",
-        "Proveedor",
-        "Insumo",
-        "Servicio",
-        "Venta",
-        "Horario",
-        "Cita",
-        "Manicurista",
-        "Abastecimiento",
-        "Novedades",
-        "Usuario",
-    ];
+    const [modulosDisponibles, setModulos] = useState([])
 
     useEffect(() => {
-        const obtener_roles = async () =>{
-            try{
+        const obtener_roles = async () => {
+            try {
                 const data = await listar_roles();
                 setRoles(data)
                 console.log(data)
-            }catch(error){
-                console.error("Error llamando los roles: ",error)
+            } catch (error) {
+                console.error("Error llamando los roles: ", error)
             }
         };
 
         obtener_roles();
+    }, []);
+
+    useEffect(() => {
+        const obtener_modulos = async () => {
+            try {
+                const data = await listar_permisos();
+                setModulos(data)
+                console.log(data)
+            } catch (error) {
+                console.error("Error llamando los modulos: ", error)
+            }
+        };
+
+        obtener_modulos();
     }, []);
 
     const validarCampo = (name, value) => {
@@ -77,7 +79,7 @@ const GestionRoles = () => {
         );
     };
 
-    const handleCrear = (e) => {
+    const handleCrear = async (e) => {
         e.preventDefault();
 
         let nuevosErrores = {};
@@ -100,20 +102,27 @@ const GestionRoles = () => {
 
         setErrores(nuevosErrores);
 
-        if (Object.keys(nuevosErrores).length === 0) {
-            closeCrearModal();
+        const hayErrores = Object.keys(nuevosErrores).length > 0;
+
+        if (hayErrores) {
+            alert("Por favor completa todos los campos correctamente.");
+            return;
         }
 
-        const hayErrores =
-            Object.values(nuevosErrores).some((e) => e) ||
-            Object.values(formData).some((val) => val.trim() === "");
+        try {
+            console.log(formData)
+            const nuevoRol = await crear_rol(formData.nombre, formData.descripcion);
 
-        if (!hayErrores) {
+            await asignar_permisos_rol(nuevoRol.id, modulosSeleccionados.map(m => m.id));
+
+            alert("Rol y permisos creados correctamente");
             closeCrearModal();
-        } else {
-            alert("Por favor completa todos los campos correctamente.");
+        } catch (error) {
+            console.error("Error al crear el rol o asignando permisos: ", error);
+            alert("Ocurrió un error al guardar la información");
         }
     };
+
 
     const openCrearModal = () => setCrearModalOpen(true);
     const closeCrearModal = () => setCrearModalOpen(false);
@@ -281,8 +290,9 @@ const GestionRoles = () => {
                                     <td>
                                         <button
                                             onClick={() => handleToggleEstado(rol.id)}
-                                            className={`estado-btn ${rol.estado ? 'estado-activo' : 'estado-inactivo'}`}>
-                                            {rol.estado ? "Activo" : "Inactivo"}
+                                            className={`estado-btn ${rol.estado === 'activo' ? 'estado-activo' : 'estado-inactivo'}`}
+                                        >
+                                            {rol.estado === 'activo' ? "activo" : "inactivo"}
                                         </button>
                                     </td>
                                     <td className="text-center space-x-2">
@@ -383,10 +393,10 @@ const GestionRoles = () => {
                                                 .slice(columna * 4, columna === 2 ? 14 : (columna + 1) * 4)
                                                 .map((modulo) => (
                                                     <label
-                                                        key={modulo}
+                                                        key={modulo.id}
                                                         className="border checkbox-label rounded-lg p-4 shadow-md flex items-center justify-between cursor-pointer"
                                                     >
-                                                        <span className="permiso-info">{modulo}</span>
+                                                        <span className="permiso-info">{modulo.modulo}</span>
                                                         <input
                                                             type="checkbox"
                                                             checked={modulosSeleccionados.includes(modulo)}
@@ -507,10 +517,10 @@ const GestionRoles = () => {
                                                 .slice(columna * 4, columna === 2 ? 14 : (columna + 1) * 4)
                                                 .map((modulo) => (
                                                     <label
-                                                        key={modulo}
+                                                        key={modulo.id}
                                                         className="border checkbox-label rounded-lg p-4 shadow-md flex items-center justify-between cursor-pointer"
                                                     >
-                                                        <span className="permiso-info">{modulo}</span>
+                                                        <span className="permiso-info">{modulo.modulo}</span>
                                                         <input
                                                             type="checkbox"
                                                             checked={modulosSeleccionados.includes(modulo)}
