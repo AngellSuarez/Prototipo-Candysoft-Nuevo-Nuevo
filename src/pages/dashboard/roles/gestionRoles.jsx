@@ -8,7 +8,9 @@ import withReactContent from 'sweetalert2-react-content';
 import { useTheme } from "../../tema/ThemeContext";
 import { Link } from "react-router-dom";
 import { Bell, User } from 'lucide-react';
-import { listar_roles, listar_permisos, crear_rol, asignar_permisos_rol } from '../../../services/roles_service'
+
+import { listar_roles, listar_permisos, crear_rol, asignar_permisos_rol, detalles_con_permisos, borrar_rol } from '../../../services/roles_service'
+
 const GestionRoles = () => {
 
     const [roles, setRoles] = useState([])
@@ -150,8 +152,10 @@ const GestionRoles = () => {
 
 
     const [isVerModalOpen, setVerModalOpen] = useState(false);
-    const openVerModal = (rol) => {
-        setRolSeleccionado(rol);
+    const openVerModal = async (rol) => {
+        const detalles = await detalles_con_permisos(rol.id);
+        console.log(detalles)
+        setRolSeleccionado(detalles);
         setVerModalOpen(true);
     };
 
@@ -195,6 +199,28 @@ const GestionRoles = () => {
             reverseButtons: true,
             customClass: {
                 popup: 'swal-rosado'
+            }
+        }).then(async (result) => {
+            if (result.isConfirmed) {
+                try {
+                    await borrar_rol(rol.id);
+                    MySwal.fire({
+                        title: "Eliminado",
+                        text: 'El rol ${rol.nombre} ha sido eliminado.',
+                        icon: "success",
+                        confirmButtonColor: '#7e2952',
+                        customClass: { popup: 'swal-rosado' }
+                        
+                    });
+                }catch(error) {
+                    MySwal.fire({
+                        title: 'Error',
+                        text: error.message || 'No se pudo eliminar el rol.',
+                        icon: 'error',
+                        confirmButtonColor: '#7e2952',
+                        customClass: { popup: 'swal-rosado' }
+                    });
+                }
             }
         })
     };
@@ -588,10 +614,10 @@ const GestionRoles = () => {
                             <div className="info-usuario space-y-3">
                                 <div className="grid grid-cols-2 gap-3">
                                     <div className="fila-formulario">
-                                        <p><strong>Nombre del rol:</strong> {rolSeleccionado.nombre}</p>
-                                        <p><strong>Descripción del rol:</strong> {rolSeleccionado.descripcion}</p>
+                                        <p><strong>Nombre del rol:</strong> {rolSeleccionado.rol.nombre}</p>
+                                        <p><strong>Descripción del rol:</strong> {rolSeleccionado.rol.descripcion}</p>
                                     </div>
-                                    <p><strong>Estado:</strong> {rolSeleccionado.estado ? "Activo" : "Inactivo"}</p>
+                                    <p><strong>Estado:</strong> {rolSeleccionado.rol.estado}</p>
                                 </div>
                             </div>
                             <div className="tabla-liq">
@@ -604,8 +630,8 @@ const GestionRoles = () => {
                                     <tbody>
                                         {rolSeleccionado.modulos && rolSeleccionado.modulos.length > 0 ? (
                                             rolSeleccionado.modulos.map((modulo) => (
-                                                <tr key={modulo}>
-                                                    <td>{modulo}</td>
+                                                <tr key={modulo.id}>
+                                                    <td>{modulo.modulo}</td>
                                                 </tr>
                                             ))
                                         ) : (

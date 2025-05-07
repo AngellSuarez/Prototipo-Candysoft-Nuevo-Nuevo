@@ -24,6 +24,26 @@ async function listar_roles(){
     }
 }
 
+async function detalles_con_permisos(id){
+    try{
+        const response = await fetch(`${BASE_URL}roles/${id}/detalle_con_permiso/`,{
+            method:'GET',
+            headers:{
+                'Content-Type':'application/json',
+            },
+        });
+
+        if(!response.ok){
+            const error = await response.json();
+            throw new Error(error.detail || 'Error al conseguir los datos del rol: ',error)
+        }
+
+        return await response.json().catch(() => null)
+    }catch(error){
+        console.error("Error al conseguir la info del rol: ",error)
+    }
+}
+
 async function listar_permisos(){
     try{
         const response = await fetch(`${BASE_URL}permiso/`, {
@@ -94,9 +114,31 @@ async function asignar_permisos_rol(rolId, modulosSeleccionados){
     }
 }
 
+
+//cambiar de estado y borrar
+async function borrar_rol(id){
+    try{
+        const response = fetch(`${BASE_URL}roles/${id}/`,{
+            method:"DELETE",
+            headers:{"Content-Type":"application/json"}
+        });
+
+        if(!response.ok){
+            const error = await response.json();
+            throw new Error(error.message || "Error al eliminar el rol")
+        }
+        return await response.json().catch(() => null);
+
+    }catch(error){
+        console.error("Error al eliminar el rol: ",error)
+    }
+}
+
 export{
     listar_roles,
+    detalles_con_permisos,
     listar_permisos,
     crear_rol,
-    asignar_permisos_rol
+    asignar_permisos_rol,
+    borrar_rol
 }
