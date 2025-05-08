@@ -9,11 +9,21 @@ import { useTheme } from "../../tema/ThemeContext";
 import { Link } from "react-router-dom";
 import { Bell, User } from 'lucide-react';
 
-import { listar_roles, listar_permisos, crear_rol, asignar_permisos_rol, detalles_con_permisos, borrar_rol } from '../../../services/roles_service'
+import {
+    listar_roles,
+    listar_permisos,
+    crear_rol,
+    actualizar_rol_con_permisos,
+    borrar_rol,
+    cambiar_estado_rol,
+    detalles_con_permisos,
+    obtener_permisos_por_rol,
+    asignar_permisos_rol
+} from '../../../services/roles_service';
 
 const GestionRoles = () => {
 
-    const [roles, setRoles] = useState([])
+    const [roles, setRoles] = useState([]);
     const [rolSeleccionado, setRolSeleccionado] = useState(null);
     const [busqueda, setBusqueda] = useState("");
     const [paginaActual, setPaginaActual] = useState(1);
@@ -24,16 +34,38 @@ const GestionRoles = () => {
     const [errores, setErrores] = useState({});
 
     const [modulosSeleccionados, setModulosSeleccionados] = useState([]);
-    const [modulosDisponibles, setModulos] = useState([])
+    const [modulosDisponibles, setModulos] = useState([]);
+
+    const [isEditarModalOpen, setEditarModalOpen] = useState(false);
+    const [rolEditando, setRolEditando] = useState(null);
+    const [erroresEditar, setErroresEditar] = useState({});
+
+    const [isVerModalOpen, setVerModalOpen] = useState(false);
+
+    const { darkMode } = useTheme();
+    const MySwal = withReactContent(Swal);
+
+    const [isNotificacionesModalOpen, setIsNotificacionesModalOpen] = useState(false);
+    const [notificaciones, setNotificaciones] = useState([
+        { id: 1, mensaje: "Nueva novedad creada por Paula. Cambio en el horario de ingreso" },
+        { id: 2, mensaje: "Se ha agendado una cita para el 03/05/2025." }
+    ]);
 
     useEffect(() => {
         const obtener_roles = async () => {
             try {
                 const data = await listar_roles();
-                setRoles(data)
-                console.log(data)
+                setRoles(data);
+                console.log(data);
             } catch (error) {
-                console.error("Error llamando los roles: ", error)
+                console.error("Error al llamar los roles: ", error);
+                Swal.fire({
+                    title: 'Error',
+                    text: error.message || 'No se pudieron cargar los roles.',
+                    icon: 'error',
+                    confirmButtonColor: '#7e2952',
+                    customClass: { popup: 'swal-rosado' }
+                });
             }
         };
 
@@ -44,10 +76,17 @@ const GestionRoles = () => {
         const obtener_modulos = async () => {
             try {
                 const data = await listar_permisos();
-                setModulos(data)
-                console.log(data)
+                setModulos(data);
+                console.log(data);
             } catch (error) {
-                console.error("Error llamando los modulos: ", error)
+                console.error("Error al llamar los módulos: ", error);
+                Swal.fire({
+                    title: 'Error',
+                    text: error.message || 'No se pudieron cargar los módulos.',
+                    icon: 'error',
+                    confirmButtonColor: '#7e2952',
+                    customClass: { popup: 'swal-rosado' }
+                });
             }
         };
 
@@ -85,78 +124,169 @@ const GestionRoles = () => {
         e.preventDefault();
 
         let nuevosErrores = {};
-        const nombresCampos = {
-            nombre: "El nombre",
-            correo: "El correo",
-            contraseña: "La contraseña",
-        };
-
-        Object.entries(formData).forEach(([campo, valor]) => {
-            if (!valor.trim()) {
-                const nombreCampo = nombresCampos[campo] || "Este campo";
-                nuevosErrores[campo] = `${nombreCampo} es obligatorio`;
-            }
-        });
-
-        if (modulosSeleccionados.length === 0) {
-            nuevosErrores.modulos = "Debe seleccionar al menos un módulo";
-        }
+        if (!formData.nombre.trim()) nuevosErrores.nombre = "El nombre del rol es obligatorio";
+        if (!formData.descripcion.trim()) nuevosErrores.descripcion = "La descripción del rol es obligatoria";
+        if (modulosSeleccionados.length === 0) nuevosErrores.modulos = "Debe seleccionar al menos un módulo";
 
         setErrores(nuevosErrores);
 
-        const hayErrores = Object.keys(nuevosErrores).length > 0;
-
-        if (hayErrores) {
-            alert("Por favor completa todos los campos correctamente.");
+        if (Object.keys(nuevosErrores).length > 0) {
+            Swal.fire({
+                title: 'Advertencia',
+                text: 'Por favor completa todos los campos correctamente.',
+                icon: 'warning',
+                confirmButtonColor: '#7e2952',
+                customClass: { popup: 'swal-rosado' }
+            });
             return;
         }
 
         try {
-            console.log(formData)
             const nuevoRol = await crear_rol(formData.nombre, formData.descripcion);
-
             await asignar_permisos_rol(nuevoRol.id, modulosSeleccionados.map(m => m.id));
-
-            alert("Rol y permisos creados correctamente");
+            Swal.fire({
+                title: 'Éxito',
+                text: 'Rol y permisos creados correctamente.',
+                icon: 'success',
+                confirmButtonColor: '#7e2952',
+                customClass: { popup: 'swal-rosado' }
+            });
             closeCrearModal();
+            const dataActualizada = await listar_roles();
+            setRoles(dataActualizada);
         } catch (error) {
             console.error("Error al crear el rol o asignando permisos: ", error);
-            alert("Ocurrió un error al guardar la información");
+            Swal.fire({
+                title: 'Error',
+                text: error.message || 'Ocurrió un error al guardar la información.',
+                icon: 'error',
+                confirmButtonColor: '#7e2952',
+                customClass: { popup: 'swal-rosado' }
+            });
         }
     };
 
+    const handleEditarChange = (e) => {
+        const { name, value } = e.target;
+        setRolEditando({ ...rolEditando, [name]: value });
+        if (erroresEditar[name]) validarCampoEditar(name, value);
+    };
+
+    const handleEditarBlur = (e) => {
+        const { name, value } = e.target;
+        validarCampoEditar(name, value);
+    };
+
+    const validarCampoEditar = (name, value) => {
+        let error = "";
+        if (!value.trim()) {
+            error = name === "nombre" ? "El nombre del rol es obligatorio" : "La descripción del rol es obligatoria";
+        }
+        setErroresEditar((prev) => ({ ...prev, [name]: error }));
+    };
+
+    const handleGuardarCambios = async (e) => {
+        e.preventDefault();
+
+        const nuevosErrores = {};
+        if (!rolEditando.nombre.trim()) nuevosErrores.nombre = "El nombre es obligatorio";
+        if (!rolEditando.descripcion.trim()) nuevosErrores.descripcion = "La descripción es obligatoria";
+        if (modulosSeleccionados.length === 0) nuevosErrores.modulos = "Debe seleccionar al menos un módulo";
+
+        setErroresEditar(nuevosErrores);
+
+        if (Object.keys(nuevosErrores).length > 0) {
+            Swal.fire({
+                title: 'Advertencia',
+                text: 'Por favor completa todos los campos correctamente.',
+                icon: 'warning',
+                confirmButtonColor: '#7e2952',
+                customClass: { popup: 'swal-rosado' }
+            });
+            return;
+        }
+
+        try {
+            await actualizar_rol_con_permisos(
+                rolEditando.id,
+                {
+                    nombre: rolEditando.nombre,
+                    descripcion: rolEditando.descripcion,
+                    estado: rolEditando.estado
+                },
+                modulosSeleccionados.map(m => m.id)
+            );
+            Swal.fire({
+                title: 'Éxito',
+                text: 'Rol actualizado correctamente.',
+                icon: 'success',
+                confirmButtonColor: '#7e2952',
+                customClass: { popup: 'swal-rosado' }
+            });
+            closeEditarModal();
+            const dataActualizada = await listar_roles();
+            setRoles(dataActualizada);
+        } catch (error) {
+            console.error("Error al actualizar el rol: ", error);
+            Swal.fire({
+                title: 'Error',
+                text: error.message || 'Ocurrió un error al actualizar la información.',
+                icon: 'error',
+                confirmButtonColor: '#7e2952',
+                customClass: { popup: 'swal-rosado' }
+            });
+        }
+    };
 
     const openCrearModal = () => setCrearModalOpen(true);
     const closeCrearModal = () => setCrearModalOpen(false);
 
-    const [isEditarModalOpen, setEditarModalOpen] = useState(false);
-    const [rolEditando, setRolEditando] = useState(null);
-
-    const openEditarModal = (rol) => {
+    const openEditarModal = async (rol) => {
         setRolEditando(rol);
         setEditarModalOpen(true);
+        try {
+            const permisosRol = await obtener_permisos_por_rol(rol.id);
+            setModulosSeleccionados(permisosRol.map(p => modulosDisponibles.find(m => m.id === p.permiso_id)).filter(Boolean));
+        } catch (error) {
+            console.error("Error al cargar los permisos del rol: ", error);
+            Swal.fire({
+                title: 'Error',
+                text: error.message || 'Error al cargar los permisos para editar.',
+                icon: 'error',
+                confirmButtonColor: '#7e2952',
+                customClass: { popup: 'swal-rosado' }
+            });
+        }
     };
 
     const closeEditarModal = () => {
         setRolEditando(null);
         setEditarModalOpen(false);
+        setErroresEditar({}); // Limpiar errores al cerrar
+        setModulosSeleccionados([]); // Resetear módulos seleccionados al cerrar
     };
 
     const handleEditarRol = (id) => {
         const rol = roles.find(u => u.id === id);
-        setModulosSeleccionados(rol.modulos || []);
         openEditarModal(rol);
     };
 
-    const [erroresEditar, setErroresEditar] = useState({});
-
-
-    const [isVerModalOpen, setVerModalOpen] = useState(false);
     const openVerModal = async (rol) => {
-        const detalles = await detalles_con_permisos(rol.id);
-        console.log(detalles)
-        setRolSeleccionado(detalles);
-        setVerModalOpen(true);
+        try {
+            const detalles = await detalles_con_permisos(rol.id);
+            console.log(detalles);
+            setRolSeleccionado(detalles);
+            setVerModalOpen(true);
+        } catch (error) {
+            console.error("Error al obtener los detalles del rol: ", error);
+            Swal.fire({
+                title: 'Error',
+                text: error.message || 'Error al cargar los detalles del rol.',
+                icon: 'error',
+                confirmButtonColor: '#7e2952',
+                customClass: { popup: 'swal-rosado' }
+            });
+        }
     };
 
     const closeVerModal = () => {
@@ -164,13 +294,32 @@ const GestionRoles = () => {
         setVerModalOpen(false);
     };
 
-    const handleToggleEstado = (id) => {
-        setRoles(roles.map(rol =>
-            rol.id === id ? { ...rol, estado: !rol.estado } : rol
-        ));
+    const handleToggleEstado = async (id) => {
+        try {
+            await cambiar_estado_rol(id);
+            setRoles(prevRoles =>
+                prevRoles.map(rol =>
+                    rol.id === id ? { ...rol, estado: rol.estado === 'activo' ? 'inactivo' : 'activo' } : rol
+                )
+            );
+            Swal.fire({
+                title: 'Éxito',
+                text: 'Estado del rol actualizado correctamente.',
+                icon: 'success',
+                confirmButtonColor: '#7e2952',
+                customClass: { popup: 'swal-rosado' }
+            });
+        } catch (error) {
+            console.error("Error al cambiar el estado del rol: ", error);
+            Swal.fire({
+                title: 'Error',
+                text: error.message || 'No se pudo cambiar el estado del rol.',
+                icon: 'error',
+                confirmButtonColor: '#7e2952',
+                customClass: { popup: 'swal-rosado' }
+            });
+        }
     };
-
-    const MySwal = withReactContent(Swal);
 
     const handleEliminarRol = (rol) => {
         if (rol.nombre.toLowerCase() === 'administrador') {
@@ -206,13 +355,15 @@ const GestionRoles = () => {
                     await borrar_rol(rol.id);
                     MySwal.fire({
                         title: "Eliminado",
-                        text: 'El rol ${rol.nombre} ha sido eliminado.',
+                        text: `El rol ${rol.nombre} ha sido eliminado.`,
                         icon: "success",
                         confirmButtonColor: '#7e2952',
                         customClass: { popup: 'swal-rosado' }
-                        
+
                     });
-                }catch(error) {
+                    const dataActualizada = await listar_roles();
+                    setRoles(dataActualizada);
+                } catch (error) {
                     MySwal.fire({
                         title: 'Error',
                         text: error.message || 'No se pudo eliminar el rol.',
@@ -222,7 +373,7 @@ const GestionRoles = () => {
                     });
                 }
             }
-        })
+        });
     };
 
     const handleBuscar = (e) => {
@@ -246,14 +397,6 @@ const GestionRoles = () => {
         if (numero < 1 || numero > totalPaginas) return;
         setPaginaActual(numero);
     };
-
-    const { darkMode } = useTheme();
-
-    const [isNotificacionesModalOpen, setIsNotificacionesModalOpen] = useState(false);
-    const [notificaciones, setNotificaciones] = useState([
-        { id: 1, mensaje: "Nueva novedad creada por Paula. Cambio en el horario de ingreso" },
-        { id: 2, mensaje: "Se ha agendado una cita para el 03/05/2025." }
-    ]);
 
     const openNotificacionesModal = () => setIsNotificacionesModalOpen(true);
     const closeNotificacionesModal = () => setIsNotificacionesModalOpen(false);
@@ -449,39 +592,13 @@ const GestionRoles = () => {
                 </div>
             )}
 
-            {isEditarModalOpen && rolEditando && (
+            {isEditarModalOpen && (
                 <div className="overlay-popup" onClick={closeEditarModal}>
                     <div className="ventana-popup max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
                         <div className="contenido-popup2">
                             <h2 className="text-xl font-semibold mb-4">Editar rol</h2>
                             <form
-                                onSubmit={(e) => {
-                                    e.preventDefault();
-                                    let isValid = true;
-                                    let errors = {};
-
-                                    if (rolEditando.nombre.trim() === '') {
-                                        errors.nombre = 'Este campo es obligatorio';
-                                        isValid = false;
-                                    }
-                                    if (rolEditando.descripcion.trim() === '') {
-                                        errors.descripcion = 'Este campo es obligatorio';
-                                        isValid = false;
-                                    }
-                                    if (modulosSeleccionados.length === 0) {
-                                        errors.modulos = 'Debes seleccionar al menos un módulo';
-                                        isValid = false;
-                                    }
-
-                                    if (isValid) {
-                                        setRoles(prev =>
-                                            prev.map(u => u.id === rolEditando.id ? rolEditando : u)
-                                        );
-                                        closeEditarModal();
-                                    } else {
-                                        setErroresEditar(errors);
-                                    }
-                                }}
+                                onSubmit={handleGuardarCambios}
                                 className="space-y-3"
                             >
                                 <div className="grid grid-cols-2 gap-3">
@@ -491,19 +608,13 @@ const GestionRoles = () => {
                                             <input
                                                 type="text"
                                                 name="nombre"
-                                                value={rolEditando.nombre}
-                                                onChange={(e) => {
-                                                    setRolEditando({ ...rolEditando, nombre: e.target.value });
-                                                    if (e.target.value.trim() === '') {
-                                                        setErroresEditar((prev) => ({ ...prev, nombre: 'Este campo es obligatorio' }));
-                                                    } else {
-                                                        setErroresEditar((prev) => ({ ...prev, nombre: null }));
-                                                    }
-                                                }}
-                                                placeholder="Nombre"
+                                                value={rolEditando?.nombre || ""}
+                                                onChange={handleEditarChange}
+                                                onBlur={handleEditarBlur}
                                                 className="input-texto"
+                                                placeholder="Nombre"
                                             />
-                                            {erroresEditar?.nombre && (
+                                            {erroresEditar.nombre && (
                                                 <div style={{ textAlign: 'left' }}>
                                                     <p className="error-mensaje-rol">{erroresEditar.nombre}</p>
                                                 </div>
@@ -514,19 +625,13 @@ const GestionRoles = () => {
                                             <input
                                                 type="text"
                                                 name="descripcion"
-                                                value={rolEditando.descripcion}
-                                                onChange={(e) => {
-                                                    setRolEditando({ ...rolEditando, descripcion: e.target.value });
-                                                    if (e.target.value.trim() === '') {
-                                                        setErroresEditar((prev) => ({ ...prev, descripcion: 'Este campo es obligatorio' }));
-                                                    } else {
-                                                        setErroresEditar((prev) => ({ ...prev, descripcion: null }));
-                                                    }
-                                                }}
-                                                placeholder="Descripción"
+                                                value={rolEditando?.descripcion || ""}
+                                                onChange={handleEditarChange}
+                                                onBlur={handleEditarBlur}
                                                 className="input-texto"
+                                                placeholder="Descripción"
                                             />
-                                            {erroresEditar?.descripcion && (
+                                            {erroresEditar.descripcion && (
                                                 <div style={{ textAlign: 'left' }}>
                                                     <p className="error-mensaje-rol">{erroresEditar.descripcion}</p>
                                                 </div>
@@ -536,51 +641,37 @@ const GestionRoles = () => {
                                 </div>
 
                                 <div className="grid-roles">
-
                                     {[0, 1, 2].map((columna) => (
                                         <div key={columna} className="grid-column">
-                                            {modulosDisponibles
-                                                .slice(columna * 4, columna === 2 ? 14 : (columna + 1) * 4)
-                                                .map((modulo) => (
-                                                    <label
-                                                        key={modulo.id}
-                                                        className="border checkbox-label rounded-lg p-4 shadow-md flex items-center justify-between cursor-pointer"
-                                                    >
-                                                        <span className="permiso-info">{modulo.modulo}</span>
-                                                        <input
-                                                            type="checkbox"
-                                                            checked={modulosSeleccionados.includes(modulo)}
-                                                            onChange={() => {
-                                                                handleModuloChange(modulo);
-                                                                if (modulosSeleccionados.length > 0) {
-                                                                    setErroresEditar(prev => ({ ...prev, modulos: null }));
-                                                                }
-                                                            }}
-                                                            className="checkbox-input"
-                                                        />
-                                                    </label>
-                                                ))}
+                                            {modulosDisponibles.slice(columna * 4, columna === 2 ? 14 : (columna + 1) * 4).map((modulo) => (
+                                                <label
+                                                    key={modulo.id}
+                                                    className="border checkbox-label rounded-lg p-4 shadow-md flex items-center justify-between cursor-pointer"
+                                                >
+                                                    <span className="permiso-info">{modulo.modulo}</span>
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={modulosSeleccionados.some(m => m.id === modulo.id)}
+                                                        onChange={() => handleModuloChange(modulo)}
+                                                        className="checkbox-input"
+                                                    />
+                                                </label>
+                                            ))}
                                         </div>
                                     ))}
                                 </div>
-                                {erroresEditar?.modulos && (
+                                {erroresEditar.modulos && (
                                     <div style={{ textAlign: 'left' }}>
                                         <p className="error-mensaje-rol">{erroresEditar.modulos}</p>
                                     </div>
                                 )}
+
                                 <div className="campo">
                                     <label className="subtitulo-editar-todos">Estado:</label>
                                     <select
                                         name="estado"
-                                        value={rolEditando.estado ? "activo" : "inactivo"}
-                                        onChange={(e) => {
-                                            const value = e.target.value;
-                                            setRolEditando({ ...rolEditando, estado: value === "activo" });
-                                            setErroresEditar(prev => ({
-                                                ...prev,
-                                                estado: value.trim() === "" ? "Este campo es obligatorio" : "",
-                                            }));
-                                        }}
+                                        value={rolEditando?.estado ? "activo" : "inactivo"}
+                                        onChange={handleEditarChange}
                                         className="input-select"
                                     >
                                         <option value="">Selecciona el estado</option>
@@ -595,7 +686,7 @@ const GestionRoles = () => {
                                         Cancelar
                                     </button>
                                     <button type="submit" className="btn-crear">
-                                        Guardar Cambios
+                                        Guardar
                                     </button>
                                 </div>
                             </form>
