@@ -51,7 +51,8 @@ const GestionProveedores = () => {
             nombreContacto: "nombre del contacto",
             apellidoContacto: "apellido del contacto",
             telefonoContacto: "teléfono del contacto",
-            correoContacto: "correo del contacto"
+            correoContacto: "correo del contacto",
+            tipo_persona: "Tipo de persona"
         };
         return nombres[campo] || campo;
     };
