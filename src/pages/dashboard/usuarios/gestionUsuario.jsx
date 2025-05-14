@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { FiEdit, FiTrash2 } from 'react-icons/fi';
 import "../../../css/gestionar.css";
 import { AiOutlineEye } from "react-icons/ai";
@@ -8,33 +8,92 @@ import { useTheme } from "../../tema/ThemeContext";
 import { Link } from "react-router-dom";
 import { Bell, User } from 'lucide-react';
 
+import { listar_usuarios, cambiar_estado_usuario, eliminar_usuario, crear_usuario, editar_usuario } from "../../../services/usuarios_service"
+import { listar_roles } from "../../../services/roles_service";
+
 const GestionUsuarios = () => {
 
-    const [usuarios, setUsuarios] = useState([
-        { id: 1, nombre: "Sofia", apellido: "Perez", tipoDocumento: "CC", celular: "3007762312", documento: "11355647", correo: "sofi@gmail.com", ciudad: "Medellin", telefono: "3118675434", direccion: "Calle 12", rol: "Manicurista", estado: false },
-        { id: 2, nombre: "Laura", apellido: "Monsalve", tipoDocumento: "CC", celular: "3124567898", documento: "10456532", correo: "lau@gmail.com", ciudad: "Envigado", telefono: "3007765412", direccion: "Calle 24", rol: "Recepcionista", estado: true },
-    ]);
+    const [usuarios, setUsuarios] = useState([]);
+    const [roles, setRoles] = useState([]);
 
     const [usuarioSeleccionado, setUsuarioSeleccionado] = useState(null);
     const [busqueda, setBusqueda] = useState("");
     const [paginaActual, setPaginaActual] = useState(1);
-    const usuarioPorPagina = 4;
+    const usuarioPorPagina = 5;
 
     const [isCrearModalOpen, setCrearModalOpen] = useState(false);
     const openCrearModal = () => setCrearModalOpen(true);
     const closeCrearModal = () => setCrearModalOpen(false);
 
     const [formData, setFormData] = useState({
-        nombre: "",
-        apellido: "",
-        correo: "",
-        tipoDocumento: "",
-        documento: "",
-        celular: "",
-        direccion: "",
-        ciudad: "",
-        rol: "",
+        username: '',
+        password: '',
+        nombre: '',
+        apellido: '',
+        correo: '',
+        rol_id: '',
+        passwordConfirm: ''
+
     });
+
+    const handle_crear_usuario = async (e) => {
+        e.preventDefault();
+
+        // Validación básica (puedes extenderla)
+        if (!formData.username || !formData.password || !formData.nombre || !formData.apellido || !formData.correo || !formData.rol_id) {
+            MySwal.fire({
+                title: 'Error',
+                text: 'Por favor, completa todos los campos obligatorios.',
+                icon: 'warning',
+                confirmButtonColor: '#7e2952',
+                customClass: { popup: 'swal-rosado' }
+            });
+            return;
+        }
+
+        try {
+            const respuestaApi = await crear_usuario(
+                formData.username,
+                formData.password,
+                formData.nombre,
+                formData.apellido,
+                formData.correo,
+                formData.rol_id
+            );
+            console.log(respuestaApi)
+
+            if (respuestaApi && respuestaApi.message) {
+                MySwal.fire({
+                    title: 'Usuario Creado',
+                    text: respuestaApi.message,
+                    icon: 'success',
+                    confirmButtonColor: '#7e2952',
+                    customClass: { popup: 'swal-rosado' }
+                }).then(() => {
+                    window.location.reload();
+                });
+            } else {
+                MySwal.fire({
+                    title: 'Éxito',
+                    text: 'El usuario ha sido creado exitosamente.',
+                    icon: 'success',
+                    confirmButtonColor: '#7e2952',
+                    customClass: { popup: 'swal-rosado' }
+                }).then(() => {
+                    window.location.reload();
+                });
+            }
+        } catch (error) {
+            console.error("Error al crear el usuario: ", error);
+            MySwal.fire({
+                title: 'Error',
+                text: error.message || 'No se pudo crear el usuario.',
+                icon: 'error',
+                confirmButtonColor: '#7e2952',
+                customClass: { popup: 'swal-rosado' }
+            });
+        }
+    };
 
     const [errores, setErrores] = useState({});
 
@@ -43,6 +102,12 @@ const GestionUsuarios = () => {
 
         if (!value.trim()) {
             switch (name) {
+                case 'username':
+                    error = 'el nombre de usuario es obligatorio';
+                    break;
+                case 'password':
+                    error = "la contraseña es necesaria";
+                    break;
                 case "nombre":
                     error = "El nombre es obligatorio";
                     break;
@@ -52,58 +117,44 @@ const GestionUsuarios = () => {
                 case "correo":
                     error = "El correo electrónico es obligatorio";
                     break;
-                case "tipoDocumento":
-                    error = "El tipo de documento es obligatorio";
-                    break;
-                case "documento":
-                    error = "El número de documento es obligatorio";
-                    break;
-                case "celular":
-                    error = "El número de celular es obligatorio";
-                    break;
-                case "direccion":
-                    error = "La dirección es obligatoria";
-                    break;
-                case "ciudad":
-                    error = "La ciudad es obligatoria";
-                    break;
-                case "rol":
+                case "rol_id": // Asegúrate de usar el name correcto de tu select de rol
                     error = "El rol es obligatorio";
+                    break;
+                case "passwordConfirm":
+                    error = "La confirmación de la contraseña es obligatoria";
                     break;
                 default:
                     error = "Campo obligatorio";
             }
         } else {
             if (name === "correo") {
-                const dominiosPermitidos = ["@gmail.com", "@outlook.com", "@yahoo.es"];
-                const incluyeDominio = dominiosPermitidos.some((dom) =>
-                    value.toLowerCase().endsWith(dom)
-                );
-                if (!value.includes("@") || !incluyeDominio) {
-                    error =
-                        "Correo inválido. Usa @gmail.com, @outlook.com o @yahoo.es";
+                if (!value.includes("@") || !/\S+@\S+\.\S+/.test(value)) {
+                    error = "Correo electrónico inválido.";
                 }
-            }
-
-            if (name === "celular") {
-                const soloNumeros = value.replace(/\D/g, "");
-                if (soloNumeros.length !== 10) {
-                    error = "El celular debe tener exactamente 10 números";
+            } else if (name === "password") {
+                if (value.length < 6) {
+                    error = "La contraseña debe tener al menos 6 caracteres.";
+                } else if (!/\d/.test(value)) {
+                    error = "La contraseña debe contener al menos un número.";
+                } else if (!/[^a-zA-Z0-9\s]/.test(value)) {
+                    error = "La contraseña debe contener al menos un carácter especial.";
                 }
+            } else if (name === "passwordConfirm" && formData.password !== value) {
+                error = "Las contraseñas no coinciden.";
             }
         }
 
-        setErrores((prev) => ({ ...prev, [name]: error }));
+        setErrores({ ...errores, [name]: error });
     };
 
     const MySwal = withReactContent(Swal);
 
-    const handleEliminarUsuario = (usuario) => {
-        MySwal.fire({
+    const handleEliminarUsuario = async (usuario) => {
+        const resultado = await MySwal.fire({
             title: `Eliminar al usuario`,
             html: `
-            <p class="texto-blanco">¿Estás seguro de que deseas eliminar a <strong>${usuario.nombre} ${usuario.apellido}</strong>?</p>
-            `,
+                <p class="texto-blanco">¿Estás seguro de que deseas eliminar a <strong>${usuario.nombre} ${usuario.apellido}</strong>?</p>
+                `,
             icon: 'warning',
             showCancelButton: true,
             confirmButtonText: 'Sí, eliminar',
@@ -114,7 +165,64 @@ const GestionUsuarios = () => {
             customClass: {
                 popup: 'swal-rosado'
             }
-        })
+        });
+
+        if (resultado.isConfirmed) {
+            try {
+                const respuestaApi = await eliminar_usuario(usuario.id);
+                let swalConfig = {};
+
+                // Ajustar la lógica de los mensajes basados en la respuesta de la API
+                if (respuestaApi && respuestaApi.message === 'Usuario desactivado correctamente') {
+                    swalConfig = {
+                        title: 'Usuario Desactivado',
+                        text: 'El usuario ha sido desactivado exitosamente.',
+                        icon: 'success',
+                        confirmButtonColor: '#7e2952',
+                    };
+                } else if (respuestaApi && respuestaApi.message === 'Usuario y sus asociados eliminados permanentemente') {
+                    swalConfig = {
+                        title: 'Usuario Eliminado',
+                        text: 'El usuario y sus datos asociados han sido eliminados permanentemente.',
+                        icon: 'success',
+                        confirmButtonColor: '#7e2952',
+                    };
+                } else if (respuestaApi && respuestaApi.message) {
+                    swalConfig = {
+                        title: 'Éxito',
+                        text: respuestaApi.message,
+                        icon: 'success',
+                        confirmButtonColor: '#7e2952',
+                    };
+                } else if (!respuestaApi?.ok) {
+                    swalConfig = {
+                        title: 'Usuario Eliminado',
+                        text: 'El usuario y sus datos asociados han sido eliminados permanentemente.',
+                        icon: 'success',
+                        confirmButtonColor: '#7e2952',
+                    };
+                } else {
+                    swalConfig = {
+                        title: 'Éxito',
+                        text: 'Operación realizada con éxito.',
+                        icon: 'success',
+                        confirmButtonColor: '#7e2952',
+                    };
+                }
+
+                MySwal.fire(swalConfig).then(() => {
+                    window.location.reload();
+                });
+
+            } catch (error) {
+                MySwal.fire({
+                    title: 'Error',
+                    text: `Ocurrió un error al eliminar el usuario: ${error.message}`,
+                    icon: 'error',
+                    confirmButtonColor: '#7e2952',
+                });
+            }
+        }
     };
 
     const handleChange = (e) => {
@@ -132,28 +240,15 @@ const GestionUsuarios = () => {
         validarCampo(name, value);
     };
 
-    const handleCrear = (e) => {
+    const handlePaste = (e) => {
         e.preventDefault();
-
-
-        let erroresTemp = {};
-        Object.keys(formData).forEach((campo) => {
-            validarCampo(campo, formData[campo]);
-            if (!formData[campo].trim()) {
-                erroresTemp[campo] = "Campo obligatorio";
-            }
+        MySwal.fire({
+            title: 'Acción no permitida',
+            text: 'No puedes copiar y pegar en este campo.',
+            icon: 'warning',
+            confirmButtonColor: '#7e2952',
+            customClass: { popup: 'swal-rosado' }
         });
-
-        const hayErrores =
-            Object.values(errores).some((e) => e) ||
-            Object.values(formData).some((val) => val.trim() === "");
-
-        if (!hayErrores) {
-
-            closeCrearModal();
-        } else {
-            alert("Por favor completa todos los campos correctamente.");
-        }
     };
 
     const inputClass = (name) =>
@@ -191,6 +286,21 @@ const GestionUsuarios = () => {
     };
     const [erroresEditar, setErroresEditar] = useState({});
 
+    const handleEditarCambio = (e) => {
+        const { name, value } = e.target;
+
+        setUsuarioEditando((prev) => ({
+            ...prev,
+            [name]: value,
+        }));
+
+        if (erroresEditar[name]) {
+            validarCampo(name, value);
+        }
+    };
+
+
+
 
     const [isVerModalOpen, setVerModalOpen] = useState(false);
     const openVerModal = (usuario) => {
@@ -203,11 +313,6 @@ const GestionUsuarios = () => {
         setVerModalOpen(false);
     };
 
-    const handleToggleEstado = (id) => {
-        setUsuarios(usuarios.map(usuario =>
-            usuario.id === id ? { ...usuario, estado: !usuario.estado } : usuario
-        ));
-    };
 
     const handleBuscar = (e) => {
         const valorBusqueda = e.target.value.toLowerCase();
@@ -233,6 +338,75 @@ const GestionUsuarios = () => {
         { id: 1, mensaje: "Nueva novedad creada por Paula. Cambio en el horario de ingreso" },
         { id: 2, mensaje: "Se ha agendado una cita para el 03/05/2025." }
     ]);
+
+    useEffect(() => {
+        const obtener_usuarios = async () => {
+            try {
+                const data = await listar_usuarios();
+                setUsuarios(data);
+                console.log(data);
+            } catch (error) {
+                console.error("Error al llamar los usuarios: ", error);
+                Swal.fire({
+                    title: 'Error',
+                    text: error.message || 'No se pudieron cargar los usuarios',
+                    icon: 'error',
+                    confirmButtonColor: '#7e2952',
+                    customClass: { popup: 'swal-rosado' }
+                });
+            }
+        };
+
+        obtener_usuarios();
+    }, []);
+
+    useEffect(() => {
+        const obtener_roles = async () => {
+            try {
+                const data = await listar_roles();
+                setRoles(data);
+                console.log(data);
+            } catch (error) {
+                console.error("Error al llamar los módulos: ", error);
+                Swal.fire({
+                    title: 'Error',
+                    text: error.message || 'No se pudieron cargar los módulos.',
+                    icon: 'error',
+                    confirmButtonColor: '#7e2952',
+                    customClass: { popup: 'swal-rosado' }
+                });
+            }
+        };
+
+        obtener_roles();
+    }, []);
+
+    const handleToggleEstado = async (id) => {
+        try {
+            await cambiar_estado_usuario(id);
+            setUsuarios(prevUsuarios =>
+                prevUsuarios.map(usuario =>
+                    usuario.id === id ? { ...usuario, estado: usuario.estado === 'activo' ? 'inactivo' : 'activo' } : usuario
+                )
+            );
+            Swal.fire({
+                title: 'Exito',
+                text: 'Estado del usuario actualizado con exito',
+                icon: 'success',
+                confirmButtonColor: '#7e2952',
+                customClass: { popup: 'swal-rosado' }
+            });
+        } catch (error) {
+            console.error("Error al cambiar el estado del usuario: ", error)
+            Swal.fire({
+                title: 'Error',
+                text: error.message || 'No se pudo cambiar el estado del usuario',
+                icon: 'error',
+                confirmButtonColor: '#7e2952',
+                customClass: { popup: 'swal-rosado' }
+            });
+        }
+    };
 
     const openNotificacionesModal = () => setIsNotificacionesModalOpen(true);
     const closeNotificacionesModal = () => setIsNotificacionesModalOpen(false);
@@ -282,9 +456,8 @@ const GestionUsuarios = () => {
                     <thead>
                         <tr>
                             <th>Nombre</th>
-                            <th>Identificación</th>
+                            <th>Apellido</th>
                             <th>Correo</th>
-                            <th>Teléfono</th>
                             <th>Rol</th>
                             <th>Estado</th>
                             <th>Acciones</th>
@@ -296,15 +469,15 @@ const GestionUsuarios = () => {
                             usuariosActuales.map((usuario) => (
                                 <tr key={usuario.id}>
                                     <td>{usuario.nombre}</td>
-                                    <td>{usuario.documento}</td>
+                                    <td>{usuario.apellido}</td>
                                     <td>{usuario.correo}</td>
-                                    <td>{usuario.telefono}</td>
-                                    <td>{usuario.rol}</td>
+                                    <td>{usuario.rol_id_out}</td>
                                     <td>
                                         <button
                                             onClick={() => handleToggleEstado(usuario.id)}
-                                            className={`estado-btn ${usuario.estado ? 'estado-activo' : 'estado-inactivo'}`}>
-                                            {usuario.estado ? "Activo" : "Inactivo"}
+                                            className={`estado-btn ${usuario.estado === "activo" ? 'estado-activo' : 'estado-inactivo'}`}
+                                        >
+                                            {usuario.estado === "activo" ? "activo" : "inactivo"}
                                         </button>
                                     </td>
                                     <td className="text-center space-x-2">
@@ -371,7 +544,7 @@ const GestionUsuarios = () => {
                     <div className="ventana-popup max-h-[300vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
                         <div className="contenido-popup2">
                             <h2 className="text-xl font-semibold mb-4">Crear usuario</h2>
-                            <form onSubmit={handleCrear} className="form-crear-usuario">
+                            <form onSubmit={handle_crear_usuario} className="form-crear-usuario">
 
                                 <div className="fila-formulario">
                                     <div className="campo relative">
@@ -400,37 +573,6 @@ const GestionUsuarios = () => {
                                     </div>
                                 </div>
 
-
-                                <div className="fila-formulario">
-                                    <div className="campo">
-                                        <select
-                                            name="tipoDocumento"
-                                            className={selectClass("tipoDocumento")}
-                                            value={formData.tipoDocumento}
-                                            onChange={handleChange}
-                                            onBlur={handleBlur}
-                                        >
-                                            <option value="">Tipo de Documento *</option>
-                                            <option value="CC">CC</option>
-                                            <option value="CE">CE</option>
-                                        </select>
-                                        {errores.tipoDocumento && <p className="error-texto">{errores.tipoDocumento}</p>}
-                                    </div>
-                                    <div className="campo">
-                                        <input
-                                            type="text"
-                                            name="documento"
-                                            placeholder={renderPlaceholder("Número de Documento", "documento")}
-                                            className={inputClass("documento")}
-                                            value={formData.documento}
-                                            onChange={handleChange}
-                                            onBlur={handleBlur}
-                                        />
-                                        {errores.documento && <p className="error-texto">{errores.documento}</p>}
-                                    </div>
-                                </div>
-
-
                                 <div className="fila-formulario">
                                     <div className="campo">
                                         <input
@@ -444,66 +586,66 @@ const GestionUsuarios = () => {
                                         />
                                         {errores.correo && <p className="error-texto">{errores.correo}</p>}
                                     </div>
-                                    <div className="campo">
-                                        <input
-                                            type="tel"
-                                            name="celular"
-                                            placeholder={renderPlaceholder("Celular", "celular")}
-                                            className={inputClass("celular")}
-                                            value={formData.celular}
-                                            onChange={handleChange}
-                                            onBlur={handleBlur}
-                                        />
-                                        {errores.celular && <p className="error-texto">{errores.celular}</p>}
-                                    </div>
-                                </div>
 
-
-                                <div className="fila-formulario">
                                     <div className="campo">
                                         <input
                                             type="text"
-                                            name="direccion"
-                                            placeholder={renderPlaceholder("Dirección", "direccion")}
-                                            className={inputClass("direccion")}
-                                            value={formData.direccion}
+                                            name="username"
+                                            placeholder={renderPlaceholder("Nombre usuario", "username")}
+                                            className={inputClass("username")}
+                                            value={formData.username}
                                             onChange={handleChange}
                                             onBlur={handleBlur}
                                         />
-                                        {errores.direccion && <p className="error-texto">{errores.direccion}</p>}
-                                    </div>
-                                    <div className="campo">
-                                        <select
-                                            name="ciudad"
-                                            className={selectClass("ciudad")}
-                                            value={formData.ciudad}
-                                            onChange={handleChange}
-                                            onBlur={handleBlur}
-                                        >
-                                            <option value="">Seleccionar Ciudad *</option>
-                                            <option value="medellin">Medellín</option>
-                                            <option value="bogota">Bogotá</option>
-                                            <option value="cali">Cali</option>
-                                        </select>
-                                        {errores.ciudad && <p className="error-texto">{errores.ciudad}</p>}
+                                        {errores.username && <p className="error-texto">{errores.username}</p>}
                                     </div>
                                 </div>
 
+                                <div className="fila-formulario">
+                                    <div className="campo">
+                                        <input
+                                            type="password"
+                                            name="password"
+                                            placeholder={renderPlaceholder("Contraseña", "password")}
+                                            className={inputClass("password")}
+                                            value={formData.password}
+                                            onChange={handleChange}
+                                            onBlur={handleBlur}
+                                            onPaste={handlePaste}
+                                        />
+                                        {errores.password && <p className="error-texto">{errores.password}</p>}
+                                    </div>
+
+                                    <div className="campo">
+                                        <input
+                                            type="password"
+                                            name="passwordConfirm"
+                                            placeholder={renderPlaceholder("Confirmar contraseña", "passwordConfirm")}
+                                            className={inputClass("passwordConfirm")}
+                                            value={formData.passwordConfirm}
+                                            onChange={handleChange}
+                                            onBlur={handleBlur}
+                                            onPaste={handlePaste}
+                                        />
+                                        {errores.passwordConfirm && <p className="error-texto">{errores.passwordConfirm}</p>}
+                                    </div>
+                                </div>
 
                                 <div className="fila-formulario">
                                     <div className="campo">
                                         <select
-                                            name="rol"
+                                            name="rol_id"
                                             className={selectClass("rol")}
-                                            value={formData.rol}
+                                            value={formData.rol_id}
                                             onChange={handleChange}
                                             onBlur={handleBlur}
                                         >
                                             <option value="">Seleccionar Rol *</option>
-                                            <option value="Administrador">Administrador</option>
-                                            <option value="Recepcionista">Recepcionista</option>
-                                            <option value="Manicurista">Manicurista</option>
-                                            <option value="Proveedor">Proveedor</option>
+                                            {roles.map((rol) => (
+                                                <option key={rol.id} value={rol.id}>
+                                                    {rol.nombre}
+                                                </option>
+                                            ))}
                                         </select>
                                         {errores.rol && <p className="error-texto">{errores.rol}</p>}
                                     </div>
@@ -530,32 +672,52 @@ const GestionUsuarios = () => {
                         <div className="contenido-popup2">
                             <h2 className="text-xl font-semibold mb-4">Editar usuario</h2>
                             <form
-                                onSubmit={(e) => {
+                                onSubmit={async (e) => {
                                     e.preventDefault();
                                     let isValid = true;
                                     let errors = {};
+                                    console.log(usuarioEditando)
 
+                                    console.log("Valor de usuarioEditando justo antes del forEach:", usuarioEditando);
                                     Object.keys(usuarioEditando).forEach((key) => {
-                                        const value = usuarioEditando[key];
-
                                         if (
                                             key !== "estado" &&
-                                            (typeof value === "string" ? value.trim() === "" : false)
+                                            key !== "password" &&
+                                            key !== "passwordConfirm" &&
+                                            (typeof usuarioEditando[key] === "string" ? usuarioEditando[key].trim() === "" : false)
                                         ) {
                                             errors[key] = "Este campo es obligatorio";
                                             isValid = false;
                                         }
                                     });
+                                    if (!isValid) {
+                                        setErroresEditar(errors);
+                                        return;
+                                    }
 
-                                    if (isValid) {
+                                    try {
+                                        
+                                        await editar_usuario(
+                                            usuarioEditando.id,
+                                            usuarioEditando.username,
+                                            usuarioEditando.password,
+                                            usuarioEditando.nombre,
+                                            usuarioEditando.apellido,
+                                            usuarioEditando.correo,
+                                            usuarioEditando.rol_id
+                                        );
+
                                         setUsuarios((prev) =>
                                             prev.map((u) => (u.id === usuarioEditando.id ? usuarioEditando : u))
                                         );
+
                                         closeEditarModal();
-                                    } else {
-                                        setErroresEditar(errors);
+                                    } catch (error) {
+                                        console.error("Error al editar el usuario:", error);
+                                        alert("Hubo un error al editar el usuario. Revisa la consola.");
                                     }
                                 }}
+
                                 className="space-y-3"
                             >
                                 <div className="grid grid-cols-2 gap-3">
@@ -566,14 +728,7 @@ const GestionUsuarios = () => {
                                                 type="text"
                                                 name="nombre"
                                                 value={usuarioEditando.nombre}
-                                                onChange={(e) => {
-                                                    const valor = e.target.value;
-                                                    setUsuarioEditando({ ...usuarioEditando, nombre: valor });
-                                                    setErroresEditar((prev) => ({
-                                                        ...prev,
-                                                        nombre: valor.trim() === '' ? 'Este campo es obligatorio' : null,
-                                                    }));
-                                                }}
+                                                onChange={handleEditarCambio}
                                                 placeholder="Nombre"
                                                 className="input-texto"
                                             />
@@ -586,63 +741,11 @@ const GestionUsuarios = () => {
                                                 type="text"
                                                 name="apellido"
                                                 value={usuarioEditando.apellido}
-                                                onChange={(e) => {
-                                                    const valor = e.target.value;
-                                                    setUsuarioEditando({ ...usuarioEditando, apellido: valor });
-                                                    setErroresEditar((prev) => ({
-                                                        ...prev,
-                                                        apellido: valor.trim() === '' ? 'Este campo es obligatorio' : null,
-                                                    }));
-                                                }}
+                                                onChange={handleEditarCambio}
                                                 placeholder="Apellido"
                                                 className="input-texto"
                                             />
                                             {erroresEditar.apellido && <p className="error-mensaje">{erroresEditar.apellido}</p>}
-                                        </div>
-                                    </div>
-                                    <div className="fila-formulario">
-                                        <div className="campo">
-                                            <label className="subtitulo-editar-todos">Tipo documento:</label>
-                                            <select
-                                                name="tipoDocumento"
-                                                value={usuarioEditando.tipoDocumento}
-                                                onChange={(e) => {
-                                                    const valor = e.target.value;
-                                                    setUsuarioEditando({ ...usuarioEditando, tipoDocumento: valor });
-                                                    setErroresEditar((prev) => ({
-                                                        ...prev,
-                                                        tipoDocumento: valor.trim() === '' ? 'Este campo es obligatorio' : null,
-                                                    }));
-                                                }}
-                                                className="input-select"
-                                            >
-                                                <option value="">Tipo de Documento</option>
-                                                <option value="CC">CC</option>
-                                                <option value="CE">CE</option>
-                                            </select>
-                                            {erroresEditar.tipoDocumento && (
-                                                <p className="error-mensaje">{erroresEditar.tipoDocumento}</p>
-                                            )}
-                                        </div>
-
-                                        <div className="campo">
-                                            <label className="subtitulo-editar-todos">Número documento:</label>
-                                            <input
-                                                type="text"
-                                                name="documento"
-                                                value={usuarioEditando.documento}
-                                                onChange={(e) => {
-                                                    const valor = e.target.value;
-                                                    setUsuarioEditando({ ...usuarioEditando, documento: valor });
-                                                    setErroresEditar((prev) => ({
-                                                        ...prev,
-                                                        documento: valor.trim() === '' ? 'Este campo es obligatorio' : null,
-                                                    }));
-                                                }}
-                                                placeholder="Documento"
-                                                className="input-texto"
-                                            />
-                                            {erroresEditar.documento && <p className="error-mensaje">{erroresEditar.documento}</p>}
                                         </div>
                                     </div>
 
@@ -653,14 +756,7 @@ const GestionUsuarios = () => {
                                                 type="email"
                                                 name="correo"
                                                 value={usuarioEditando.correo}
-                                                onChange={(e) => {
-                                                    const valor = e.target.value;
-                                                    setUsuarioEditando({ ...usuarioEditando, correo: valor });
-                                                    setErroresEditar((prev) => ({
-                                                        ...prev,
-                                                        correo: valor.trim() === '' ? 'Este campo es obligatorio' : null,
-                                                    }));
-                                                }}
+                                                onChange={handleEditarCambio}
                                                 placeholder="Correo Electrónico"
                                                 className="input-texto"
                                             />
@@ -668,117 +764,76 @@ const GestionUsuarios = () => {
                                         </div>
 
                                         <div className="campo">
-                                            <label className="subtitulo-editar-todos">Celular:</label>
-                                            <input
-                                                type="tel"
-                                                name="celular"
-                                                value={usuarioEditando.celular}
-                                                onChange={(e) => {
-                                                    const valor = e.target.value;
-                                                    setUsuarioEditando({ ...usuarioEditando, celular: valor });
-                                                    setErroresEditar((prev) => ({
-                                                        ...prev,
-                                                        celular: valor.trim() === '' ? 'Este campo es obligatorio' : null,
-                                                    }));
-                                                }}
-                                                placeholder="Celular"
-                                                className="input-texto"
-                                            />
-                                            {erroresEditar.celular && <p className="error-mensaje">{erroresEditar.celular}</p>}
-                                        </div>
-                                    </div>
-
-                                    <div className="fila-formulario">
-                                        <div className="campo">
-                                            <label className="subtitulo-editar-todos">Dirección:</label>
+                                            <label className="subtitulo-editar-todos">Nombre usuario:</label>
                                             <input
                                                 type="text"
-                                                name="direccion"
-                                                value={usuarioEditando.direccion}
-                                                onChange={(e) => {
-                                                    const valor = e.target.value;
-                                                    setUsuarioEditando({ ...usuarioEditando, direccion: valor });
-                                                    setErroresEditar((prev) => ({
-                                                        ...prev,
-                                                        direccion: valor.trim() === '' ? 'Este campo es obligatorio' : null,
-                                                    }));
-                                                }}
-                                                placeholder="Dirección"
-                                                className="input-texto col-span-2"
+                                                name="username"
+                                                value={usuarioEditando.username}
+                                                onChange={handleEditarCambio}
+                                                placeholder="Username"
+                                                className="input-texto"
                                             />
-                                            {erroresEditar.direccion && <p className="error-mensaje">{erroresEditar.direccion}</p>}
-                                        </div>
-
-                                        <div className="campo">
-                                            <label className="subtitulo-editar-todos">Ciudad:</label>
-                                            <select
-                                                name="ciudad"
-                                                value={usuarioEditando.ciudad}
-                                                onChange={(e) => {
-                                                    const valor = e.target.value;
-                                                    setUsuarioEditando({ ...usuarioEditando, ciudad: valor });
-                                                    setErroresEditar((prev) => ({
-                                                        ...prev,
-                                                        ciudad: valor.trim() === '' ? 'Este campo es obligatorio' : null,
-                                                    }));
-                                                }}
-                                                className="input-select"
-                                            >
-                                                <option value="">Seleccionar Ciudad</option>
-                                                <option value="medellin">Medellín</option>
-                                                <option value="bogota">Bogotá</option>
-                                                <option value="cali">Cali</option>
-                                            </select>
-                                            {erroresEditar.ciudad && <p className="error-mensaje">{erroresEditar.ciudad}</p>}
+                                            {erroresEditar.usename && <p className="error-mensaje">{erroresEditar.username}</p>}
                                         </div>
                                     </div>
+
 
                                     <div className="fila-formulario">
                                         <div className="campo">
                                             <label className="subtitulo-editar-todos">Rol:</label>
-                                            <select
-                                                name="rol"
-                                                value={usuarioEditando.rol}
-                                                onChange={(e) => {
-                                                    const valor = e.target.value;
-                                                    setUsuarioEditando({ ...usuarioEditando, rol: valor });
-                                                    setErroresEditar((prev) => ({
-                                                        ...prev,
-                                                        rol: valor.trim() === '' ? 'Este campo es obligatorio' : null,
-                                                    }));
-                                                }}
-                                                className="input-select"
-                                            >
-                                                <option value="">Seleccionar Rol</option>
-                                                <option value="Administrador">Administrador</option>
-                                                <option value="Recepcionista">Recepcionista</option>
-                                                <option value="Manicurista">Manicurista</option>
-                                                <option value="Proveedor">Proveedor</option>
-                                            </select>
-                                            {erroresEditar.rol && <p className="error-mensaje">{erroresEditar.rol}</p>}
+                                            <div className="campo">
+                                                <select
+                                                    name="rol_id"
+                                                    className={selectClass("rol")}
+                                                    value={usuarioEditando.rol_id}
+                                                    onChange={handleEditarCambio}
+                                                    onBlur={handleBlur}
+                                                >
+                                                    <option value="">Seleccionar Rol *</option>
+                                                    {roles.map((rol) => (
+                                                        <option key={rol.id} value={rol.id}>
+                                                            {rol.nombre}
+                                                        </option>
+                                                    ))}
+
+                                                </select>
+                                                {errores.rol && <p className="error-texto">{errores.rol}</p>}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="fila-formulario">
+                                        <div className="campo">
+                                            <label className="subtitulo-editar-todos">Contraseña:</label>
+                                            <input
+                                                type="password"
+                                                name="password"
+                                                placeholder="Nueva Contraseña (opcional)"
+                                                className="input-texto"
+                                                value={usuarioEditando.password || ""}
+                                                onChange={handleEditarCambio}
+                                                onPaste={handlePaste}
+                                            />
+                                            {erroresEditar.password && <p className="error-mensaje">{erroresEditar.password}</p>}
                                         </div>
 
                                         <div className="campo">
-                                            <label className="subtitulo-editar-todos">Estado:</label>
-                                            <select
-                                                name="estado"
-                                                value={usuarioEditando.estado ? "activo" : "inactivo"}
-                                                onChange={(e) => {
-                                                    const value = e.target.value;
-                                                    setUsuarioEditando({ ...usuarioEditando, estado: value === "activo" });
-                                                    setErroresEditar(prev => ({
-                                                        ...prev,
-                                                        estado: value.trim() === "" ? "Campo obligatorio" : "",
-                                                    }));
-                                                }}
-                                                className="input-select"
-                                            >
-                                                <option value="">Selecciona el estado</option>
-                                                <option value="activo">Activo</option>
-                                                <option value="inactivo">Inactivo</option>
-                                            </select>
-                                            {erroresEditar.estado && <p className="error-mensaje">{erroresEditar.estado}</p>}
+                                            <label className="subtitulo-editar-todos">Confirmar Contraseña:</label>
+                                            <input
+                                                type="password"
+                                                name="passwordConfirm"
+                                                placeholder="Confirmar Nueva Contraseña"
+                                                className="input-texto"
+                                                value={usuarioEditando.passwordConfirm || ""}
+                                                onChange={handleEditarCambio}
+                                                onPaste={handlePaste}
+                                            />
+                                            {erroresEditar.passwordConfirm && <p className="error-mensaje">{erroresEditar.passwordConfirm}</p>}
                                         </div>
+                                    </div>
+
+                                    <div className="fila-formulario">
+
                                     </div>
                                     <div className="button-container">
                                         <button type="button" className="btn-cancelar" onClick={closeEditarModal}>
@@ -805,20 +860,17 @@ const GestionUsuarios = () => {
                             <div className="info-usuario space-y-3">
                                 <div className="grid grid-cols-2 gap-3">
                                     <div className="fila-formulario">
-                                        <p><strong>Nombre del Usuario:</strong> {usuarioSeleccionado.nombre} {usuarioSeleccionado.apellido}</p>
-                                        <p><strong>Tipo de Documento:</strong> {usuarioSeleccionado.tipoDocumento}</p>
+                                        <p><strong>Nombre del Usuario:</strong> {usuarioSeleccionado.username} </p>
                                     </div>
                                     <div className="fila-formulario">
-                                        <p><strong>Número de identificación:</strong> {usuarioSeleccionado.documento}</p>
-                                        <p><strong>Correo:</strong> {usuarioSeleccionado.correo}</p>
+                                        <p><strong>Nombre y apellido:</strong> {usuarioSeleccionado.nombre} {usuarioSeleccionado.apellido}</p>
                                     </div>
                                     <div className="fila-formulario">
-                                        <p><strong>Teléfono:</strong> {usuarioSeleccionado.celular}</p>
-                                        <p><strong>Dirección:</strong> {usuarioSeleccionado.direccion}</p>
+                                        <p><strong>Correo electronico:</strong> {usuarioSeleccionado.correo}</p>
                                     </div>
                                     <div className="fila-formulario">
-                                        <p><strong>Rol:</strong> {usuarioSeleccionado.rol}</p>
-                                        <p><strong>Estado:</strong> {usuarioSeleccionado.estado ? "Activo" : "Inactivo"}</p>
+                                        <p><strong>Rol:</strong> {usuarioSeleccionado.rol_id_out}</p>
+                                        <p><strong>Estado:</strong> {usuarioSeleccionado.estado}</p>
                                     </div>
                                 </div>
                             </div>
